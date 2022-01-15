@@ -2,10 +2,15 @@
 //
 
 #include <iostream>
+#include <tchar.h>
 
-int main()
+
+int __cdecl _tmain(int argc, TCHAR* argv[])
 {
     std::cout << "Hello World!\n";
+    std::cout << "It works!\n\n\n\n";
+
+    return 0;
 }
 
 // Run program: Ctrl + F5 or Debug > Start Without Debugging menu
