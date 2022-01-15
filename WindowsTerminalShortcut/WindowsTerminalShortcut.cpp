@@ -1,14 +1,219 @@
-// WindowsTerminalShortcut.cpp : This file contains the 'main' function. Program execution begins and ends there.
+// test1.cpp : This file contains the 'main' function. Program execution begins and ends there.
 //
 
-#include <iostream>
+#include <Windows.h>
+#include <stdio.h>
+#include <tlhelp32.h>
 #include <tchar.h>
+
+LPCTSTR WT_PATH = "C:\\Users\\windows\\AppData\\Local\\Microsoft\\WindowsApps\\wt.exe";
+const int THREAD_HOTKEY_ID = 27;
+
+
+// A struct that will help us in the Enum Windows Callback function
+// We will pass a pointer from the Find Main Window function to the callback function and the callback function will return when we find the desired window
+struct HandleWindowsData {
+    DWORD process_id;
+    HWND window_handle;
+};
+
+//The callback function that will be called with the EnumWindows function
+//It will be called more than one time and each time will get a different handle.
+//This will be repeated until we find the window we desire or until all the windows opened in our OS are processed in this function
+BOOL CALLBACK EnumWindowsCallback(HWND handle, LPARAM lParam)
+{
+    HandleWindowsData* data = (HandleWindowsData*)lParam;
+    DWORD process_id = 0;
+    GetWindowThreadProcessId(handle, &process_id);
+    if (data->process_id != process_id || !IsWindowVisible(handle))
+        return TRUE;
+    data->window_handle = handle;
+    return FALSE;
+}
+
+//This is the function that finds the main window of a given process id
+//It uses the EnumWindows function (from windows.h) in order to iterate through all the opened windows in the callback function (EnumWindowsCallback)
+HWND FindMainWindow(DWORD process_id)
+{
+    HandleWindowsData data;
+    data.process_id = process_id;
+    data.window_handle = 0;
+    EnumWindows(EnumWindowsCallback, (LPARAM)&data);
+    return data.window_handle;
+}
+
+
+VOID StartupProcess(LPCTSTR lpApplicationName)
+{
+    // additional information
+    STARTUPINFO si;
+    PROCESS_INFORMATION pi;
+
+    // set the size of the structures
+    ZeroMemory(&si, sizeof(si));
+    si.cb = sizeof(si);
+    ZeroMemory(&pi, sizeof(pi));
+
+    // start the program up
+    CreateProcess(lpApplicationName,   // the path
+        NULL,        // Command line
+        NULL,           // Process handle not inheritable
+        NULL,           // Thread handle not inheritable
+        FALSE,          // Set handle inheritance to FALSE
+        0,              // No creation flags
+        NULL,           // Use parent's environment block
+        NULL,           // Use parent's starting directory 
+        &si,            // Pointer to STARTUPINFO structure
+        &pi             // Pointer to PROCESS_INFORMATION structure (removed extra parentheses)
+    );
+    // Close process and thread handles. 
+    CloseHandle(pi.hProcess);
+    CloseHandle(pi.hThread);
+}
+
+DWORD FindProcessId(const char* processname)
+{
+    HANDLE hProcessSnap;
+    PROCESSENTRY32 pe32;
+    DWORD result = NULL;
+
+    // Take a snapshot of all processes in the system.
+    hProcessSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    if (INVALID_HANDLE_VALUE == hProcessSnap)
+        return(FALSE);
+
+    pe32.dwSize = sizeof(PROCESSENTRY32); // <----- IMPORTANT
+
+    // Retrieve information about the first process,
+    // and exit if unsuccessful
+    if (!Process32First(hProcessSnap, &pe32))
+    {
+        CloseHandle(hProcessSnap);          // clean the snapshot object
+        printf("!!! Failed to gather information on system processes! \n");
+        return(NULL);
+    }
+
+    do
+    {
+        printf("Checking process %s\n", pe32.szExeFile);
+        if (0 == strcmp(processname, pe32.szExeFile))
+        {
+            result = pe32.th32ProcessID;
+            break;
+        }
+    } while (Process32Next(hProcessSnap, &pe32));
+
+    CloseHandle(hProcessSnap);
+
+    return result;
+}
+
+DWORD WINAPI HotkeyThread(LPVOID lpParam) {
+    // Do stuff.  This will be the first function called on the new thread.
+    // When this function returns, the thread goes away.  See MSDN for more details.
+
+    if (RegisterHotKey(
+        NULL,
+        THREAD_HOTKEY_ID,
+        MOD_CONTROL | MOD_ALT | MOD_NOREPEAT,
+        0x54))  //0x54 is 'T'
+    {
+        printf("Hotkey 'CTRL+ALT+T' registered, using MOD_NOREPEAT flag\n");
+    }
+    else
+    {
+        printf("Hotkey could not be registered\n");
+    }
+
+    MSG msg = { 0 };
+    while (GetMessage(&msg, NULL, 0, 0) != 0)
+    {
+        if (msg.message == WM_HOTKEY)
+        {
+            printf("WM_HOTKEY received\n");
+            StartupProcess(WT_PATH);
+
+        }
+        if (msg.message == WM_CLOSE)
+        {
+            printf("WM_CLOSE received\n");
+            break;
+
+        }
+        printf("\n");
+    }
+
+    if (UnregisterHotKey(
+        NULL,
+        THREAD_HOTKEY_ID
+    ))
+    {
+        printf("Hotkey 'CTRL+ALT+T' unregistered\n");
+    }
+    else
+    {
+        printf("Hotkey could not be unregistered\n");
+    }
+
+    return 0;
+}
 
 
 int __cdecl _tmain(int argc, TCHAR* argv[])
 {
-    std::cout << "Hello World!\n";
-    std::cout << "It works!\n\n\n\n";
+    //HANDLE thread = CreateThread(NULL, 0, HotkeyThread, NULL, 0, NULL);
+    //if (thread) {
+    //    Sleep(8000);
+    //    PostThreadMessageA(
+    //        GetThreadId(thread),
+    //        WM_CLOSE,
+    //        NULL,
+    //        NULL
+    //    );
+
+    //    WaitForSingleObject(thread, INFINITE);
+    //}
+
+    DWORD WindowsTerminalProcessId = FindProcessId("WindowsTerminal.exe");
+    printf("%d\n", WindowsTerminalProcessId);
+
+    HWND windowHandle = FindMainWindow(WindowsTerminalProcessId);
+
+    WINDOWPLACEMENT windowPlacement = { 0 };
+
+    if (IsWindowVisible(windowHandle))
+    {
+        printf("Window is visible\n");
+    }
+    else
+    {
+        printf("Window is not visible\n");
+    }
+
+    if (IsIconic(windowHandle)) {
+
+        if (ShowWindow(windowHandle, SW_NORMAL))
+        {
+            printf("Windows Terminal was restored correctly to the foreground\n");
+        }
+        else
+        {
+            printf("Can not restore the window to the foreground\n");
+        }
+
+    }
+    else
+    {
+        if (SetForegroundWindow(windowHandle))
+        {
+            printf("Windows Terminal was set correctly to the foreground\n");
+        }
+        else
+        {
+            printf("Can not brought the window to the foreground\n");
+        }
+
+    }
 
     return 0;
 }
