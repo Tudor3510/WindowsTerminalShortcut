@@ -131,7 +131,55 @@ DWORD WINAPI HotkeyThread(LPVOID lpParam) {
         if (msg.message == WM_HOTKEY)
         {
             printf("WM_HOTKEY received\n");
-            StartupProcess(WT_PATH);
+
+            DWORD WindowsTerminalProcessId = FindProcessId("WindowsTerminal.exe");
+            if (WindowsTerminalProcessId)
+            {
+                fprintf(stdout, "There is a terminal open. Trying to bring it to foreground\n");
+
+                HWND windowHandle = FindMainWindow(WindowsTerminalProcessId);
+
+                /*
+                if (IsWindowVisible(windowHandle))
+                {
+                    printf("Window is visible\n");
+                }
+                else
+                {
+                    printf("Window is not visible\n");
+                }
+                */
+
+                if (IsIconic(windowHandle)) {
+
+                    if (ShowWindow(windowHandle, SW_NORMAL))
+                    {
+                        fprintf(stdout, "Windows Terminal was restored correctly to the foreground\n");
+                    }
+                    else
+                    {
+                        fprintf(stdout, "Can not restore the window to the foreground\n");
+                    }
+
+                }
+                else
+                {
+                    if (SetForegroundWindow(windowHandle))
+                    {
+                        fprintf(stdout, "Windows Terminal was set correctly to the foreground\n");
+                    }
+                    else
+                    {
+                        fprintf(stdout, "Can not brought the window to the foreground\n");
+                    }
+
+                }
+            }
+            else
+            {
+                fprintf(stdout, "There is no terminal open. Trying to open one\n");
+                StartupProcess(WT_PATH);
+            }
 
         }
         if (msg.message == WM_CLOSE)
@@ -161,65 +209,17 @@ DWORD WINAPI HotkeyThread(LPVOID lpParam) {
 
 int _tmain(int argc, TCHAR* argv[])
 {
-    //HANDLE thread = CreateThread(NULL, 0, HotkeyThread, NULL, 0, NULL);
-    //if (thread) {
-    //    Sleep(8000);
-    //    PostThreadMessageA(
-    //        GetThreadId(thread),
-    //        WM_CLOSE,
-    //        NULL,
-    //        NULL
-    //    );
+    HANDLE thread = CreateThread(NULL, 0, HotkeyThread, NULL, 0, NULL);
+    if (thread) {
+        Sleep(8000);
+        PostThreadMessageA(
+            GetThreadId(thread),
+            WM_CLOSE,
+            NULL,
+            NULL
+        );
 
-    //    WaitForSingleObject(thread, INFINITE);
-    //}
-
-    DWORD WindowsTerminalProcessId = FindProcessId("WindowsTerminal.exe");
-    if (WindowsTerminalProcessId)
-    {
-        fprintf(stdout, "There is a terminal open. Trying to bring it to foreground\n");
-
-        HWND windowHandle = FindMainWindow(WindowsTerminalProcessId);
-
-        /*
-        if (IsWindowVisible(windowHandle))
-        {
-            printf("Window is visible\n");
-        }
-        else
-        {
-            printf("Window is not visible\n");
-        }
-        */
-
-        if (IsIconic(windowHandle)) {
-
-            if (ShowWindow(windowHandle, SW_NORMAL))
-            {
-                fprintf(stdout, "Windows Terminal was restored correctly to the foreground\n");
-            }
-            else
-            {
-                fprintf(stdout, "Can not restore the window to the foreground\n");
-            }
-
-        }
-        else
-        {
-            if (SetForegroundWindow(windowHandle))
-            {
-                fprintf(stdout, "Windows Terminal was set correctly to the foreground\n");
-            }
-            else
-            {
-                fprintf(stdout, "Can not brought the window to the foreground\n");
-            }
-
-        }
-    }
-    else
-    {
-        fprintf(stdout, "There is no terminal open. Trying to open one\n");
+        WaitForSingleObject(thread, INFINITE);
     }
 
     return 0;
