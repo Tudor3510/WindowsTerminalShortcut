@@ -6,7 +6,7 @@
 #include <tlhelp32.h>
 #include <tchar.h>
 
-LPCTSTR WT_PATH = "C:\\Users\\windows\\AppData\\Local\\Microsoft\\WindowsApps\\wt.exe";
+LPCTSTR WT_PATH = "%localappdata%\\Microsoft\\WindowsApps\\wt.exe";
 const int THREAD_HOTKEY_ID = 27;
 
 
@@ -89,13 +89,13 @@ DWORD FindProcessId(const char* processname)
     if (!Process32First(hProcessSnap, &pe32))
     {
         CloseHandle(hProcessSnap);          // clean the snapshot object
-        printf("!!! Failed to gather information on system processes! \n");
+        fprintf(stdout, "!!! Failed to gather information on system processes! \n");
         return(NULL);
     }
 
     do
     {
-        printf("Checking process %s\n", pe32.szExeFile);
+        //printf("Checking process %s\n", pe32.szExeFile);
         if (0 == strcmp(processname, pe32.szExeFile))
         {
             result = pe32.th32ProcessID;
@@ -159,7 +159,7 @@ DWORD WINAPI HotkeyThread(LPVOID lpParam) {
 }
 
 
-int __cdecl _tmain(int argc, TCHAR* argv[])
+int _tmain(int argc, TCHAR* argv[])
 {
     //HANDLE thread = CreateThread(NULL, 0, HotkeyThread, NULL, 0, NULL);
     //if (thread) {
@@ -175,44 +175,51 @@ int __cdecl _tmain(int argc, TCHAR* argv[])
     //}
 
     DWORD WindowsTerminalProcessId = FindProcessId("WindowsTerminal.exe");
-    printf("%d\n", WindowsTerminalProcessId);
-
-    HWND windowHandle = FindMainWindow(WindowsTerminalProcessId);
-
-    WINDOWPLACEMENT windowPlacement = { 0 };
-
-    if (IsWindowVisible(windowHandle))
+    if (WindowsTerminalProcessId)
     {
-        printf("Window is visible\n");
-    }
-    else
-    {
-        printf("Window is not visible\n");
-    }
+        fprintf(stdout, "There is a terminal open. Trying to bring it to foreground\n");
 
-    if (IsIconic(windowHandle)) {
+        HWND windowHandle = FindMainWindow(WindowsTerminalProcessId);
 
-        if (ShowWindow(windowHandle, SW_NORMAL))
+        /*
+        if (IsWindowVisible(windowHandle))
         {
-            printf("Windows Terminal was restored correctly to the foreground\n");
+            printf("Window is visible\n");
         }
         else
         {
-            printf("Can not restore the window to the foreground\n");
+            printf("Window is not visible\n");
         }
+        */
 
-    }
-    else
-    {
-        if (SetForegroundWindow(windowHandle))
-        {
-            printf("Windows Terminal was set correctly to the foreground\n");
+        if (IsIconic(windowHandle)) {
+
+            if (ShowWindow(windowHandle, SW_NORMAL))
+            {
+                fprintf(stdout, "Windows Terminal was restored correctly to the foreground\n");
+            }
+            else
+            {
+                fprintf(stdout, "Can not restore the window to the foreground\n");
+            }
+
         }
         else
         {
-            printf("Can not brought the window to the foreground\n");
-        }
+            if (SetForegroundWindow(windowHandle))
+            {
+                fprintf(stdout, "Windows Terminal was set correctly to the foreground\n");
+            }
+            else
+            {
+                fprintf(stdout, "Can not brought the window to the foreground\n");
+            }
 
+        }
+    }
+    else
+    {
+        fprintf(stdout, "There is no terminal open. Trying to open one\n");
     }
 
     return 0;
