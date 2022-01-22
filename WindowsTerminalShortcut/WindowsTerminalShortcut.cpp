@@ -5,12 +5,13 @@
 #include <stdio.h>
 #include <tlhelp32.h>
 #include <tchar.h>
-
+#include <signal.h>
 
 LPCTSTR WT_PATH = "C:\\Users\\windows\\AppData\\Local\\Microsoft\\WindowsApps\\wt.exe";
 const int THREAD_HOTKEY_ID = 27;
 
 FILE *debugFile;
+DWORD mainThreadId = NULL;
 
 // A struct that will help us in the Enum Windows Callback function
 // We will pass a pointer from the Find Main Window function to the callback function and the callback function will return when we find the desired window
@@ -18,6 +19,11 @@ struct HandleWindowsData {
     DWORD process_id;
     HWND window_handle;
 };
+
+void termination(int signum)
+{
+    PostThreadMessageA(mainThreadId, WM_CLOSE, NULL, NULL);
+}
 
 //The callback function that will be called with the EnumWindows function
 //It will be called more than one time and each time will get a different handle.
@@ -179,7 +185,7 @@ DWORD WINAPI HotkeyThread(LPVOID lpParam) {
                     }
                     else
                     {
-                        fprintf(debugFile, "Can not brought the window to the foreground\n");
+                        fprintf(debugFile, "Can not bring the window to the foreground\n");
                     }
 
                 }
@@ -194,7 +200,7 @@ DWORD WINAPI HotkeyThread(LPVOID lpParam) {
         fflush(debugFile);
         if (msg.message == WM_CLOSE)
         {
-            printf("WM_CLOSE received\n");
+            fprintf(debugFile, "WM_CLOSE received\n");
             break;
 
         }
@@ -206,11 +212,11 @@ DWORD WINAPI HotkeyThread(LPVOID lpParam) {
         THREAD_HOTKEY_ID
     ))
     {
-        printf("Hotkey 'CTRL+ALT+T' unregistered\n");
+        fprintf(debugFile, "Hotkey 'CTRL+ALT+T' unregistered\n");
     }
     else
     {
-        printf("Hotkey could not be unregistered\n");
+        fprintf(debugFile, "Hotkey could not be unregistered\n");
     }
 
     return 0;
@@ -220,6 +226,10 @@ DWORD WINAPI HotkeyThread(LPVOID lpParam) {
 int _tmain(int argc, TCHAR* argv[])
 {
     debugFile = fopen("C:\\Users\\windows\\Desktop\\Debug-File.txt", "w");
+
+    mainThreadId = GetCurrentThreadId();
+    signal(SIGTERM, termination);
+    /*
     HANDLE thread = CreateThread(NULL, 0, HotkeyThread, NULL, 0, NULL);
     if (thread)
     {
@@ -232,6 +242,103 @@ int _tmain(int argc, TCHAR* argv[])
     }
 
     fclose(debugFile);
+
+    */
+
+    // Do stuff.  This will be the first function called on the new thread.
+// When this function returns, the thread goes away.  See MSDN for more details.
+
+    if (RegisterHotKey(
+        NULL,
+        THREAD_HOTKEY_ID,
+        MOD_CONTROL | MOD_ALT | MOD_NOREPEAT,
+        0x54))  //0x54 is 'T'
+    {
+        printf("Hotkey 'CTRL+ALT+T' registered, using MOD_NOREPEAT flag\n");
+    }
+    else
+    {
+        printf("Hotkey could not be registered\n");
+    }
+
+    MSG msg = { 0 };
+    while (GetMessage(&msg, NULL, 0, 0) != 0)
+    {
+        if (msg.message == WM_HOTKEY)
+        {
+            printf("WM_HOTKEY received\n");
+
+            DWORD WindowsTerminalProcessId = FindProcessId("WindowsTerminal.exe");
+            if (WindowsTerminalProcessId)
+            {
+                fprintf(debugFile, "There is a terminal open. Trying to bring it to foreground\n");
+
+                HWND windowHandle = FindMainWindow(WindowsTerminalProcessId);
+
+                /*
+                if (IsWindowVisible(windowHandle))
+                {
+                    printf("Window is visible\n");
+                }
+                else
+                {
+                    printf("Window is not visible\n");
+                }
+                */
+
+                if (IsIconic(windowHandle)) {
+
+                    if (ShowWindow(windowHandle, SW_NORMAL))
+                    {
+                        fprintf(debugFile, "Windows Terminal was restored correctly to the foreground\n");
+                    }
+                    else
+                    {
+                        fprintf(debugFile, "Can not restore the window to the foreground\n");
+                    }
+
+                }
+                else
+                {
+                    if (SetForegroundWindow(windowHandle))
+                    {
+                        fprintf(debugFile, "Windows Terminal was set correctly to the foreground\n");
+                    }
+                    else
+                    {
+                        fprintf(debugFile, "Can not bring the window to the foreground\n");
+                    }
+
+                }
+            }
+            else
+            {
+                fprintf(debugFile, "There is no terminal open. Trying to open one\n");
+                StartupProcess(WT_PATH);
+            }
+
+        }
+        fflush(debugFile);
+        if (msg.message == WM_CLOSE)
+        {
+            fprintf(debugFile, "WM_CLOSE received\n");
+            break;
+
+        }
+        printf("\n");
+    }
+
+    if (UnregisterHotKey(
+        NULL,
+        THREAD_HOTKEY_ID
+    ))
+    {
+        fprintf(debugFile, "Hotkey 'CTRL+ALT+T' unregistered\n");
+    }
+    else
+    {
+        fprintf(debugFile, "Hotkey could not be unregistered\n");
+    }
 
     return 0;
 }
