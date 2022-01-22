@@ -6,9 +6,11 @@
 #include <tlhelp32.h>
 #include <tchar.h>
 
-LPCTSTR WT_PATH = "%localappdata%\\Microsoft\\WindowsApps\\wt.exe";
+
+LPCTSTR WT_PATH = "C:\\Users\\windows\\AppData\\Local\\Microsoft\\WindowsApps\\wt.exe";
 const int THREAD_HOTKEY_ID = 27;
 
+FILE *debugFile;
 
 // A struct that will help us in the Enum Windows Callback function
 // We will pass a pointer from the Find Main Window function to the callback function and the callback function will return when we find the desired window
@@ -55,7 +57,7 @@ VOID StartupProcess(LPCTSTR lpApplicationName)
     ZeroMemory(&pi, sizeof(pi));
 
     // start the program up
-    CreateProcess(lpApplicationName,   // the path
+    if (CreateProcessA(lpApplicationName,   // the path
         NULL,        // Command line
         NULL,           // Process handle not inheritable
         NULL,           // Thread handle not inheritable
@@ -65,7 +67,14 @@ VOID StartupProcess(LPCTSTR lpApplicationName)
         NULL,           // Use parent's starting directory 
         &si,            // Pointer to STARTUPINFO structure
         &pi             // Pointer to PROCESS_INFORMATION structure (removed extra parentheses)
-    );
+    ))
+    {
+        fprintf(debugFile, "Process was created\n");
+    }
+    else
+    {
+        fprintf(debugFile, "Process was not created. Error code: %d\n", GetLastError());
+    }
     // Close process and thread handles. 
     CloseHandle(pi.hProcess);
     CloseHandle(pi.hThread);
@@ -89,7 +98,7 @@ DWORD FindProcessId(const char* processname)
     if (!Process32First(hProcessSnap, &pe32))
     {
         CloseHandle(hProcessSnap);          // clean the snapshot object
-        fprintf(stdout, "!!! Failed to gather information on system processes! \n");
+        fprintf(debugFile, "!!! Failed to gather information on system processes! \n");
         return(NULL);
     }
 
@@ -135,7 +144,7 @@ DWORD WINAPI HotkeyThread(LPVOID lpParam) {
             DWORD WindowsTerminalProcessId = FindProcessId("WindowsTerminal.exe");
             if (WindowsTerminalProcessId)
             {
-                fprintf(stdout, "There is a terminal open. Trying to bring it to foreground\n");
+                fprintf(debugFile, "There is a terminal open. Trying to bring it to foreground\n");
 
                 HWND windowHandle = FindMainWindow(WindowsTerminalProcessId);
 
@@ -154,11 +163,11 @@ DWORD WINAPI HotkeyThread(LPVOID lpParam) {
 
                     if (ShowWindow(windowHandle, SW_NORMAL))
                     {
-                        fprintf(stdout, "Windows Terminal was restored correctly to the foreground\n");
+                        fprintf(debugFile, "Windows Terminal was restored correctly to the foreground\n");
                     }
                     else
                     {
-                        fprintf(stdout, "Can not restore the window to the foreground\n");
+                        fprintf(debugFile, "Can not restore the window to the foreground\n");
                     }
 
                 }
@@ -166,22 +175,23 @@ DWORD WINAPI HotkeyThread(LPVOID lpParam) {
                 {
                     if (SetForegroundWindow(windowHandle))
                     {
-                        fprintf(stdout, "Windows Terminal was set correctly to the foreground\n");
+                        fprintf(debugFile, "Windows Terminal was set correctly to the foreground\n");
                     }
                     else
                     {
-                        fprintf(stdout, "Can not brought the window to the foreground\n");
+                        fprintf(debugFile, "Can not brought the window to the foreground\n");
                     }
 
                 }
             }
             else
             {
-                fprintf(stdout, "There is no terminal open. Trying to open one\n");
+                fprintf(debugFile, "There is no terminal open. Trying to open one\n");
                 StartupProcess(WT_PATH);
             }
 
         }
+        fflush(debugFile);
         if (msg.message == WM_CLOSE)
         {
             printf("WM_CLOSE received\n");
@@ -209,18 +219,19 @@ DWORD WINAPI HotkeyThread(LPVOID lpParam) {
 
 int _tmain(int argc, TCHAR* argv[])
 {
+    debugFile = fopen("C:\\Users\\windows\\Desktop\\Debug-File.txt", "w");
     HANDLE thread = CreateThread(NULL, 0, HotkeyThread, NULL, 0, NULL);
-    if (thread) {
-        Sleep(8000);
-        PostThreadMessageA(
-            GetThreadId(thread),
-            WM_CLOSE,
-            NULL,
-            NULL
-        );
-
+    if (thread)
+    {
+        fprintf(debugFile, "Thread was created successfully\n");
         WaitForSingleObject(thread, INFINITE);
     }
+    else
+    {
+        fprintf(debugFile, "Thread could not be created\n");
+    }
+
+    fclose(debugFile);
 
     return 0;
 }
