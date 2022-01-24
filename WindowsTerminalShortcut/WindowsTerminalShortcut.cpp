@@ -6,8 +6,9 @@
 #include <tlhelp32.h>
 #include <tchar.h>
 #include <signal.h>
+#include <ShlObj.h>
 
-LPCTSTR WT_PATH = "C:\\Users\\windows\\AppData\\Local\\Microsoft\\WindowsApps\\wt.exe";
+LPCTSTR WT_PATH = "%localappdata%\\Microsoft\\WindowsApps\\wt.exe";
 const int THREAD_HOTKEY_ID = 27;
 
 FILE *debugFile;
@@ -226,6 +227,22 @@ DWORD WINAPI HotkeyThread(LPVOID lpParam) {
 int _tmain(int argc, TCHAR* argv[])
 {
     debugFile = fopen("C:\\Users\\windows\\Desktop\\Debug-File.txt", "w");
+
+    PWSTR test;
+    HRESULT SHGetKnownFolderPathResult = SHGetKnownFolderPath(FOLDERID_Profile, NULL, NULL, &test);
+    if (SHGetKnownFolderPathResult == E_FAIL)
+    {
+        fprintf(stdout, "SHGetKnownFolderPath failed\n");
+    }
+    else if (SHGetKnownFolderPathResult == E_INVALIDARG)
+    {
+        fprintf(stdout, "SHGetKnownFolderPath has got an invalid argument\n");
+    }
+    else
+    {
+        fprintf(stdout, "SHGetKnownFolderPath worked as it should. The path is: %s\n", *test);
+    }
+
 
     mainThreadId = GetCurrentThreadId();
     signal(SIGTERM, termination);
