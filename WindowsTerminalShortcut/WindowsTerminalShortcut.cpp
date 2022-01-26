@@ -7,12 +7,47 @@
 #include <tchar.h>
 #include <signal.h>
 #include <ShlObj.h>
+#include <strsafe.h>
 
-LPCTSTR WT_PATH = "%localappdata%\\Microsoft\\WindowsApps\\wt.exe";
+LPCTSTR WT_USER_PATH = "\\Appdata\\Local\\Microsoft\\WindowsApps\\wt.exe";
+LPCTSTR WT_NAME = "WindowsTerminal.exe";
 const int THREAD_HOTKEY_ID = 27;
+const char DEBUG_FILE_LOCATION[] = "C:\\Users\\windows\\Desktop\\Debug-File.txt";
 
 FILE *debugFile;
 DWORD mainThreadId = NULL;
+
+BOOL WINAPI CtrlHandler(DWORD fdwCtrlType)
+{
+    switch (fdwCtrlType)
+    {
+        // Handle the CTRL-C signal.
+    case CTRL_C_EVENT:
+        printf("Ctrl-C event\n\n");
+        return TRUE;
+
+        // CTRL-CLOSE: confirm that the user wants to exit.
+    case CTRL_CLOSE_EVENT:
+        printf("Ctrl-Close event\n\n");
+        return TRUE;
+
+        // Pass other signals to the next handler.
+    case CTRL_BREAK_EVENT:
+        printf("Ctrl-Break event\n\n");
+        return FALSE;
+
+    case CTRL_LOGOFF_EVENT:
+        printf("Ctrl-Logoff event\n\n");
+        return FALSE;
+
+    case CTRL_SHUTDOWN_EVENT:
+        printf("Ctrl-Shutdown event\n\n");
+        return FALSE;
+
+    default:
+        return FALSE;
+    }
+}
 
 // A struct that will help us in the Enum Windows Callback function
 // We will pass a pointer from the Find Main Window function to the callback function and the callback function will return when we find the desired window
@@ -20,11 +55,6 @@ struct HandleWindowsData {
     DWORD process_id;
     HWND window_handle;
 };
-
-void termination(int signum)
-{
-    PostThreadMessageA(mainThreadId, WM_CLOSE, NULL, NULL);
-}
 
 //The callback function that will be called with the EnumWindows function
 //It will be called more than one time and each time will get a different handle.
@@ -194,7 +224,7 @@ DWORD WINAPI HotkeyThread(LPVOID lpParam) {
             else
             {
                 fprintf(debugFile, "There is no terminal open. Trying to open one\n");
-                StartupProcess(WT_PATH);
+             //   StartupProcess(wtFinalPat);
             }
 
         }
@@ -226,26 +256,68 @@ DWORD WINAPI HotkeyThread(LPVOID lpParam) {
 
 int _tmain(int argc, TCHAR* argv[])
 {
-    debugFile = fopen("C:\\Users\\windows\\Desktop\\Debug-File.txt", "w");
+    DWORD callResult = NULL;
+    debugFile = fopen(DEBUG_FILE_LOCATION, "w");
 
-    PWSTR test;
-    HRESULT SHGetKnownFolderPathResult = SHGetKnownFolderPath(FOLDERID_Profile, NULL, NULL, &test);
-    if (SHGetKnownFolderPathResult == E_FAIL)
+    PWSTR userDir;
+    callResult = SHGetKnownFolderPath(FOLDERID_Profile, NULL, NULL, &userDir);
+    if (callResult == E_FAIL)
     {
         fprintf(stdout, "SHGetKnownFolderPath failed\n");
     }
-    else if (SHGetKnownFolderPathResult == E_INVALIDARG)
+    else if (callResult == E_INVALIDARG)
     {
         fprintf(stdout, "SHGetKnownFolderPath has got an invalid argument\n");
     }
     else
     {
-        fprintf(stdout, "SHGetKnownFolderPath worked as it should. The path is: %s\n", *test);
+        fprintf(stdout, "SHGetKnownFolderPath worked as it should\n");
     }
 
+    TCHAR wtFinalPath[200];
 
-    mainThreadId = GetCurrentThreadId();
-    signal(SIGTERM, termination);
+    //Copying the obtained user dir to wtFinalPath
+    DWORD userDirLength = wcslen(userDir);
+    for (int i = 0; i < userDirLength; i++)
+    {
+        wtFinalPath[i] = userDir[i];
+    }
+    wtFinalPath[userDirLength] = 0;
+
+    //Concating the location of WindowsTerminal to the user directory
+    callResult = StringCchCatA(wtFinalPath, 200, WT_USER_PATH);
+    switch (callResult)
+    {
+    case S_OK:
+        fprintf(stdout, "WT_PATH_PART2 was concatened successfully\n");
+        break;
+
+    case STRSAFE_E_INVALID_PARAMETER:
+        fprintf(stdout, "StringCchCatA received an invalid parameter\n");
+        break;
+
+    case STRSAFE_E_INSUFFICIENT_BUFFER:
+        fprintf(stdout, "The memory location that should contain the string after using StringCchCatA is not large enough\n");
+        break;
+
+    default:
+        fprintf(stdout, "Something went wrong with StringCchCatA function\n");
+        break;
+    }
+
+    //Clearing the memory used by userDir, as it specifies in the documentation
+    CoTaskMemFree(userDir);
+
+    callResult = SetConsoleCtrlHandler(CtrlHandler, TRUE);
+    if (callResult)
+    {
+        fprintf(stdout, "The setConsoleCtrlHandler worked as it should\n");
+    }
+    else
+    {
+        fprintf(stdout, "The setConsoleCtrlHandler did not work\n");
+    }
+
     /*
     HANDLE thread = CreateThread(NULL, 0, HotkeyThread, NULL, 0, NULL);
     if (thread)
@@ -265,17 +337,14 @@ int _tmain(int argc, TCHAR* argv[])
     // Do stuff.  This will be the first function called on the new thread.
 // When this function returns, the thread goes away.  See MSDN for more details.
 
-    if (RegisterHotKey(
-        NULL,
-        THREAD_HOTKEY_ID,
-        MOD_CONTROL | MOD_ALT | MOD_NOREPEAT,
-        0x54))  //0x54 is 'T'
+    callResult = RegisterHotKey(NULL, THREAD_HOTKEY_ID, MOD_CONTROL | MOD_ALT | MOD_NOREPEAT, 0x54);  //0x54 is 'T'
+    if (callResult)
     {
-        printf("Hotkey 'CTRL+ALT+T' registered, using MOD_NOREPEAT flag\n");
+        fprintf(stdout, "Hotkey 'CTRL+ALT+T' registered, using MOD_NOREPEAT flag\n");
     }
     else
     {
-        printf("Hotkey could not be registered\n");
+        fprintf(stdout, "Hotkey could not be registered\n");
     }
 
     MSG msg = { 0 };
@@ -283,9 +352,9 @@ int _tmain(int argc, TCHAR* argv[])
     {
         if (msg.message == WM_HOTKEY)
         {
-            printf("WM_HOTKEY received\n");
+            fprintf(debugFile, "WM_HOTKEY received\n");
 
-            DWORD WindowsTerminalProcessId = FindProcessId("WindowsTerminal.exe");
+            DWORD WindowsTerminalProcessId = FindProcessId(WT_NAME);
             if (WindowsTerminalProcessId)
             {
                 fprintf(debugFile, "There is a terminal open. Trying to bring it to foreground\n");
@@ -305,19 +374,21 @@ int _tmain(int argc, TCHAR* argv[])
 
                 if (IsIconic(windowHandle)) {
 
-                    if (ShowWindow(windowHandle, SW_NORMAL))
+                    callResult = ShowWindow(windowHandle, SW_NORMAL);
+                    if (callResult)
                     {
-                        fprintf(debugFile, "Windows Terminal was restored correctly to the foreground\n");
+                        fprintf(debugFile, "Windows Terminal was restored correctly from the taskbar to the foreground\n");
                     }
                     else
                     {
-                        fprintf(debugFile, "Can not restore the window to the foreground\n");
+                        fprintf(debugFile, "Can not restore the window from the taskbar to the foreground\n");
                     }
 
                 }
                 else
                 {
-                    if (SetForegroundWindow(windowHandle))
+                    callResult = SetForegroundWindow(windowHandle);
+                    if (callResult)
                     {
                         fprintf(debugFile, "Windows Terminal was set correctly to the foreground\n");
                     }
@@ -331,24 +402,27 @@ int _tmain(int argc, TCHAR* argv[])
             else
             {
                 fprintf(debugFile, "There is no terminal open. Trying to open one\n");
-                StartupProcess(WT_PATH);
+                StartupProcess(wtFinalPath);
             }
 
         }
         fflush(debugFile);
+
         if (msg.message == WM_CLOSE)
         {
             fprintf(debugFile, "WM_CLOSE received\n");
             break;
-
         }
+        if (msg.message == WM_QUIT)
+        {
+            fprintf(debugFile, "WM_QUIT received\n");
+            break;
+        }
+
         printf("\n");
     }
 
-    if (UnregisterHotKey(
-        NULL,
-        THREAD_HOTKEY_ID
-    ))
+    if (UnregisterHotKey(NULL, THREAD_HOTKEY_ID))
     {
         fprintf(debugFile, "Hotkey 'CTRL+ALT+T' unregistered\n");
     }
@@ -356,6 +430,9 @@ int _tmain(int argc, TCHAR* argv[])
     {
         fprintf(debugFile, "Hotkey could not be unregistered\n");
     }
+
+
+    fclose(debugFile);
 
     return 0;
 }
