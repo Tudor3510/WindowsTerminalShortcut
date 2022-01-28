@@ -9,7 +9,23 @@
 #include <ShlObj.h>
 #include <strsafe.h>
 
-LPCTSTR WT_USER_PATH = "\\Appdata\\Local\\Microsoft\\WindowsApps\\wt.exe";
+// Here comes the custom defined error. The errors that start with 4(in hexa) are error codes completely made by us. 
+// The errors that start with 6(in hexa) are error codes defined by us, but more information can be retrieved if we call GetLastError one more time.
+// Example:
+/*
+    lastError = GetLastError();
+    if ((lastError>>29) == 1 && (lastError >> 28) == 1) //it means it starts with 6 in hexa
+    {
+        errorDetails = GetLastError();
+        ....
+    }
+*/
+
+#define CANT_CREATE_PROCESS_SNAPSHOT 0x60000001
+#define CANT_GET_FIRST_PROCESS 0x60000002
+
+
+LPCTSTR WT_APPDATA_PATH = "\\Microsoft\\WindowsApps\\wt.exe";
 LPCTSTR WT_NAME = "WindowsTerminal.exe";
 const int THREAD_HOTKEY_ID = 27;
 const char DEBUG_FILE_LOCATION[] = "C:\\Users\\windows\\Desktop\\Debug-File.txt";
@@ -17,37 +33,6 @@ const char DEBUG_FILE_LOCATION[] = "C:\\Users\\windows\\Desktop\\Debug-File.txt"
 FILE *debugFile;
 DWORD mainThreadId = NULL;
 
-BOOL WINAPI CtrlHandler(DWORD fdwCtrlType)
-{
-    switch (fdwCtrlType)
-    {
-        // Handle the CTRL-C signal.
-    case CTRL_C_EVENT:
-        printf("Ctrl-C event\n\n");
-        return TRUE;
-
-        // CTRL-CLOSE: confirm that the user wants to exit.
-    case CTRL_CLOSE_EVENT:
-        printf("Ctrl-Close event\n\n");
-        return TRUE;
-
-        // Pass other signals to the next handler.
-    case CTRL_BREAK_EVENT:
-        printf("Ctrl-Break event\n\n");
-        return FALSE;
-
-    case CTRL_LOGOFF_EVENT:
-        printf("Ctrl-Logoff event\n\n");
-        return FALSE;
-
-    case CTRL_SHUTDOWN_EVENT:
-        printf("Ctrl-Shutdown event\n\n");
-        return FALSE;
-
-    default:
-        return FALSE;
-    }
-}
 
 // A struct that will help us in the Enum Windows Callback function
 // We will pass a pointer from the Find Main Window function to the callback function and the callback function will return when we find the desired window
@@ -82,8 +67,10 @@ HWND FindMainWindow(DWORD process_id)
 }
 
 
-VOID StartupProcess(LPCTSTR lpApplicationName)
+BOOL StartupProcess(LPCTSTR lpApplicationPath)
 {
+    BOOL result = FALSE;
+
     // additional information
     STARTUPINFO si;
     PROCESS_INFORMATION pi;
@@ -94,8 +81,8 @@ VOID StartupProcess(LPCTSTR lpApplicationName)
     ZeroMemory(&pi, sizeof(pi));
 
     // start the program up
-    if (CreateProcessA(lpApplicationName,   // the path
-        NULL,        // Command line
+    result = CreateProcessA(lpApplicationPath,   // the path
+        NULL,           // Command line
         NULL,           // Process handle not inheritable
         NULL,           // Thread handle not inheritable
         FALSE,          // Set handle inheritance to FALSE
@@ -104,29 +91,36 @@ VOID StartupProcess(LPCTSTR lpApplicationName)
         NULL,           // Use parent's starting directory 
         &si,            // Pointer to STARTUPINFO structure
         &pi             // Pointer to PROCESS_INFORMATION structure (removed extra parentheses)
-    ))
-    {
-        fprintf(debugFile, "Process was created\n");
-    }
-    else
-    {
-        fprintf(debugFile, "Process was not created. Error code: %d\n", GetLastError());
-    }
+    );
+
     // Close process and thread handles. 
     CloseHandle(pi.hProcess);
     CloseHandle(pi.hThread);
+
+    return result;
 }
 
+
+// This function will return the processId.
+// If the process does not exist, it will return NULL and will set the last error to 0
+// If there is an error, it will return NULL, but the last error will not be set to 0, it will be set according to the error description
 DWORD FindProcessId(const char* processname)
 {
+    DWORD result = NULL;
+
     HANDLE hProcessSnap;
     PROCESSENTRY32 pe32;
-    DWORD result = NULL;
+
+    ZeroMemory(&pe32, sizeof(pe32));
 
     // Take a snapshot of all processes in the system.
     hProcessSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
     if (INVALID_HANDLE_VALUE == hProcessSnap)
-        return(FALSE);
+    {
+        SetLastError(CANT_CREATE_PROCESS_SNAPSHOT);
+        return NULL;
+    }
+
 
     pe32.dwSize = sizeof(PROCESSENTRY32); // <----- IMPORTANT
 
@@ -135,8 +129,8 @@ DWORD FindProcessId(const char* processname)
     if (!Process32First(hProcessSnap, &pe32))
     {
         CloseHandle(hProcessSnap);          // clean the snapshot object
-        fprintf(debugFile, "!!! Failed to gather information on system processes! \n");
-        return(NULL);
+        SetLastError(CANT_GET_FIRST_PROCESS);
+        return NULL;
     }
 
     do
@@ -148,109 +142,11 @@ DWORD FindProcessId(const char* processname)
             break;
         }
     } while (Process32Next(hProcessSnap, &pe32));
+    SetLastError(ERROR_SUCCESS);
 
     CloseHandle(hProcessSnap);
 
     return result;
-}
-
-DWORD WINAPI HotkeyThread(LPVOID lpParam) {
-    // Do stuff.  This will be the first function called on the new thread.
-    // When this function returns, the thread goes away.  See MSDN for more details.
-
-    if (RegisterHotKey(
-        NULL,
-        THREAD_HOTKEY_ID,
-        MOD_CONTROL | MOD_ALT | MOD_NOREPEAT,
-        0x54))  //0x54 is 'T'
-    {
-        printf("Hotkey 'CTRL+ALT+T' registered, using MOD_NOREPEAT flag\n");
-    }
-    else
-    {
-        printf("Hotkey could not be registered\n");
-    }
-
-    MSG msg = { 0 };
-    while (GetMessage(&msg, NULL, 0, 0) != 0)
-    {
-        if (msg.message == WM_HOTKEY)
-        {
-            printf("WM_HOTKEY received\n");
-
-            DWORD WindowsTerminalProcessId = FindProcessId("WindowsTerminal.exe");
-            if (WindowsTerminalProcessId)
-            {
-                fprintf(debugFile, "There is a terminal open. Trying to bring it to foreground\n");
-
-                HWND windowHandle = FindMainWindow(WindowsTerminalProcessId);
-
-                /*
-                if (IsWindowVisible(windowHandle))
-                {
-                    printf("Window is visible\n");
-                }
-                else
-                {
-                    printf("Window is not visible\n");
-                }
-                */
-
-                if (IsIconic(windowHandle)) {
-
-                    if (ShowWindow(windowHandle, SW_NORMAL))
-                    {
-                        fprintf(debugFile, "Windows Terminal was restored correctly to the foreground\n");
-                    }
-                    else
-                    {
-                        fprintf(debugFile, "Can not restore the window to the foreground\n");
-                    }
-
-                }
-                else
-                {
-                    if (SetForegroundWindow(windowHandle))
-                    {
-                        fprintf(debugFile, "Windows Terminal was set correctly to the foreground\n");
-                    }
-                    else
-                    {
-                        fprintf(debugFile, "Can not bring the window to the foreground\n");
-                    }
-
-                }
-            }
-            else
-            {
-                fprintf(debugFile, "There is no terminal open. Trying to open one\n");
-             //   StartupProcess(wtFinalPat);
-            }
-
-        }
-        fflush(debugFile);
-        if (msg.message == WM_CLOSE)
-        {
-            fprintf(debugFile, "WM_CLOSE received\n");
-            break;
-
-        }
-        printf("\n");
-    }
-
-    if (UnregisterHotKey(
-        NULL,
-        THREAD_HOTKEY_ID
-    ))
-    {
-        fprintf(debugFile, "Hotkey 'CTRL+ALT+T' unregistered\n");
-    }
-    else
-    {
-        fprintf(debugFile, "Hotkey could not be unregistered\n");
-    }
-
-    return 0;
 }
 
 
@@ -260,7 +156,7 @@ int _tmain(int argc, TCHAR* argv[])
     debugFile = fopen(DEBUG_FILE_LOCATION, "w");
 
     PWSTR userDir;
-    callResult = SHGetKnownFolderPath(FOLDERID_Profile, NULL, NULL, &userDir);
+    callResult = SHGetKnownFolderPath(FOLDERID_LocalAppData, NULL, NULL, &userDir);
     if (callResult == E_FAIL)
     {
         fprintf(stdout, "SHGetKnownFolderPath failed\n");
@@ -285,7 +181,7 @@ int _tmain(int argc, TCHAR* argv[])
     wtFinalPath[userDirLength] = 0;
 
     //Concating the location of WindowsTerminal to the user directory
-    callResult = StringCchCatA(wtFinalPath, 200, WT_USER_PATH);
+    callResult = StringCchCatA(wtFinalPath, 200, WT_APPDATA_PATH);
     switch (callResult)
     {
     case S_OK:
@@ -307,16 +203,6 @@ int _tmain(int argc, TCHAR* argv[])
 
     //Clearing the memory used by userDir, as it specifies in the documentation
     CoTaskMemFree(userDir);
-
-    callResult = SetConsoleCtrlHandler(CtrlHandler, TRUE);
-    if (callResult)
-    {
-        fprintf(stdout, "The setConsoleCtrlHandler worked as it should\n");
-    }
-    else
-    {
-        fprintf(stdout, "The setConsoleCtrlHandler did not work\n");
-    }
 
     /*
     HANDLE thread = CreateThread(NULL, 0, HotkeyThread, NULL, 0, NULL);
@@ -355,7 +241,7 @@ int _tmain(int argc, TCHAR* argv[])
             fprintf(debugFile, "WM_HOTKEY received\n");
 
             DWORD WindowsTerminalProcessId = FindProcessId(WT_NAME);
-            if (WindowsTerminalProcessId)
+            if (WindowsTerminalProcessId && GetLastError() == ERROR_SUCCESS)
             {
                 fprintf(debugFile, "There is a terminal open. Trying to bring it to foreground\n");
 
