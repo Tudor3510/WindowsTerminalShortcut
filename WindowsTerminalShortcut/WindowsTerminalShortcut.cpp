@@ -69,25 +69,6 @@ int _tmain(int argc, TCHAR* argv[])
         break;
     }
 
-    /*
-    HANDLE thread = CreateThread(NULL, 0, HotkeyThread, NULL, 0, NULL);
-    if (thread)
-    {
-        fprintf(debugFile, "Thread was created successfully\n");
-        WaitForSingleObject(thread, INFINITE);
-    }
-    else
-    {
-        fprintf(debugFile, "Thread could not be created\n");
-    }
-
-    fclose(debugFile);
-
-    */
-
-    // Do stuff.  This will be the first function called on the new thread.
-// When this function returns, the thread goes away.  See MSDN for more details.
-
     callResult = RegisterHotKey(NULL, THREAD_HOTKEY_ID, MOD_CONTROL | MOD_ALT | MOD_NOREPEAT, 0x54);  //0x54 is 'T'
     if (callResult)
     {
