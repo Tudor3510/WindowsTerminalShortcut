@@ -1,5 +1,7 @@
 #include <Windows.h>
 #include <tlhelp32.h>
+#include <Psapi.h>
+#include <appmodel.h>
 #include "Utils.h"
 
 
@@ -91,11 +93,11 @@ BOOL StartupProcess(LPCTSTR lpApplicationPath)
 }
 
 
-// This function will return the processId.
+// This function will return the processId of the first process found that has the given name
 // If the process does not exist, it will return NULL and will set the last error to 0
 // If the process exists, it will return the process id, but the last error will NOT be set to 0.
 // If there is an error, it will return NULL, but the last error will not be set to 0, it will be set according to the error description
-DWORD FindProcessId(const char* processname)
+DWORD FindProcessIdByName(PSTR processname)
 {
     DWORD result = NULL;
 
@@ -142,4 +144,46 @@ DWORD FindProcessId(const char* processname)
     CloseHandle(hProcessSnap);
 
     return result;
+}
+
+DWORD FindProcessIdByAUMID(PWSTR AUMID)
+{
+    DWORD result = NULL;
+    DWORD callResult = NULL;
+
+    const DWORD ARRAY_INITIAL_SIZE = 80000;
+    DWORD processesArray[ARRAY_INITIAL_SIZE];
+    DWORD processesNo = 0;
+
+    // Enumerating the processes in the processesArray
+    callResult = EnumProcesses(processesArray, ARRAY_INITIAL_SIZE * sizeof(int), &processesNo);
+
+    if (!callResult)
+    {
+        SetLastError(CANT_ENUMERATE_PROCESSES);
+        return NULL;
+    }
+
+    DWORD lengthProcessAUMID = wcslen(AUMID);
+    WCHAR* processAUMID = new WCHAR[lengthProcessAUMID + 1];
+    for (int i = 0; i < processesNo; i++)
+    {
+        HANDLE processHandle = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, TRUE, processesArray[i]);
+
+        if (processHandle)
+        {
+            lengthProcessAUMID = wcslen(AUMID) + 1;
+            callResult = GetApplicationUserModelId(processHandle, (UINT32 *)&lengthProcessAUMID, processAUMID);
+
+            if (wcscmp(AUMID, processAUMID) == 0)
+            {
+                result = processesArray[i];
+            }
+        }
+        else
+        {
+            callResult = GetLastError();
+        }
+
+    }
 }

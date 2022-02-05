@@ -16,6 +16,7 @@
 #define CANT_CREATE_PROCESS_SNAPSHOT 0x60000001
 #define CANT_GET_FIRST_PROCESS 0x60000002
 #define CANT_GET_PROCESS_ID_OF_WINDOW 0x60000004
+#define CANT_ENUMERATE_PROCESSES 0x60000008
 
 
 // This is the function that finds the HWND of the main window of a given process id
@@ -27,8 +28,11 @@ HWND FindMainWindow(DWORD process_id);
 BOOL StartupProcess(LPCTSTR lpApplicationPath);
 
 
-// This function will return the processId.
+// This function will return the processId of the first process found that has the given name
 // If the process does not exist, it will return NULL and will set the last error to 0
 // If the process exists, it will return the process id, but the last error will NOT be set to 0.
 // If there is an error, it will return NULL, but the last error will not be set to 0, it will be set according to the error description
-DWORD FindProcessId(const char* processname);
+DWORD FindProcessIdByName(PSTR processname);
+
+
+DWORD FindProcessIdByAUMID(PWSTR AUMID);

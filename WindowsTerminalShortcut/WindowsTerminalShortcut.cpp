@@ -5,12 +5,14 @@
 #include <tchar.h>
 #include <ShlObj.h>
 #include <strsafe.h>
+#include <appmodel.h>
 #include "Utils.h"
+#include "CustomStringConversion.h"
 
-const LPCTSTR WT_APPDATA_PATH = "\\Microsoft\\WindowsApps\\wt.exe";
+const PSTR WT_APPDATA_PATH = (PSTR)"\\Microsoft\\WindowsApps\\wt.exe";
 const DWORD WT_APPDATA_PATH_LENGTH = 32;
 
-const LPCTSTR WT_NAME = "WindowsTerminal.exe";
+const PSTR WT_NAME = (PSTR)"WindowsTerminal.exe";
 const int THREAD_HOTKEY_ID = 27;
 const char DEBUG_FILE_LOCATION[] = "C:\\Users\\windows\\Desktop\\Debug-File.txt";
 
@@ -18,8 +20,10 @@ FILE* debugFile;
 
 int _tmain(int argc, TCHAR* argv[])
 {
-    DWORD callResult = NULL;
+    DWORD callResult;
     debugFile = fopen(DEBUG_FILE_LOCATION, "w");
+
+    callResult = FindProcessIdByAUMID((PWSTR)L"Microsoft.Whiteboard_8wekyb3d8bbwe!Whiteboard");
 
     PWSTR userDir = NULL;
     callResult = SHGetKnownFolderPath(FOLDERID_LocalAppData, NULL, NULL, &userDir);
@@ -37,19 +41,10 @@ int _tmain(int argc, TCHAR* argv[])
     }
 
     //Copying the obtained user dir to wtFinalPath
-    DWORD userDirLength = wcslen(userDir);
-    TCHAR *wtFinalPath = new TCHAR[userDirLength + WT_APPDATA_PATH_LENGTH + 1];
-    for (int i = 0; i < userDirLength; i++)
-    {
-        wtFinalPath[i] = userDir[i];
-    }
-    wtFinalPath[userDirLength] = 0;
-
-    //Clearing the memory used by userDir, as it specifies in the documentation
-    CoTaskMemFree(userDir);
+    LPSTR wtFinalPath = wcharToChar(userDir);
 
     //Concating the location of WindowsTerminal to the user directory
-    callResult = StringCchCatA(wtFinalPath, userDirLength + WT_APPDATA_PATH_LENGTH + 1, WT_APPDATA_PATH);
+    callResult = StringCchCatA(wtFinalPath, wcslen(userDir) + WT_APPDATA_PATH_LENGTH + 1, WT_APPDATA_PATH);
     switch (callResult)
     {
     case S_OK:
@@ -68,6 +63,9 @@ int _tmain(int argc, TCHAR* argv[])
         fprintf(debugFile, "Something went wrong with StringCchCatA function\n");
         break;
     }
+
+    //Clearing the memory used by userDir, as it specifies in the documentation
+    CoTaskMemFree(userDir);
 
     callResult = RegisterHotKey(NULL, THREAD_HOTKEY_ID, MOD_CONTROL | MOD_ALT | MOD_NOREPEAT, 0x54);  //0x54 is 'T'
     if (callResult)
@@ -91,7 +89,7 @@ int _tmain(int argc, TCHAR* argv[])
         {
             fprintf(debugFile, "WM_HOTKEY received\n");
 
-            DWORD WindowsTerminalProcessId = FindProcessId(WT_NAME);
+            DWORD WindowsTerminalProcessId = FindProcessIdByName(WT_NAME);
             switch (WindowsTerminalProcessId)
             {
             case 0:
@@ -106,7 +104,7 @@ int _tmain(int argc, TCHAR* argv[])
             default:
                 fprintf(debugFile, "There is a terminal open. Trying to bring it to foreground\n");
 
-                HWND windowHandle = FindMainWindow(WindowsTerminalProcessId);
+                HWND windowHandle = FindMainWindow(58);
 
                 if (windowHandle)
                 {
