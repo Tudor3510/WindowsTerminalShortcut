@@ -1,11 +1,10 @@
 // test1.cpp : This file contains the 'main' function. Program execution begins and ends there.
 //
-
 #include <stdio.h>
 #include <tchar.h>
 #include <ShlObj.h>
 #include <strsafe.h>
-#include <appmodel.h>
+
 #include "Utils.h"
 #include "CustomStringConversion.h"
 
@@ -13,6 +12,7 @@ const PSTR WT_APPDATA_PATH = (PSTR)"\\Microsoft\\WindowsApps\\wt.exe";
 const DWORD WT_APPDATA_PATH_LENGTH = 32;
 
 const PSTR WT_NAME = (PSTR)"WindowsTerminal.exe";
+const PWSTR AUMID = (PWSTR)L"Tudor3510.WindowsTerminalShortcut.385bds23";
 const int THREAD_HOTKEY_ID = 27;
 const char DEBUG_FILE_LOCATION[] = "C:\\Users\\windows\\Desktop\\Debug-File.txt";
 
@@ -23,7 +23,26 @@ int _tmain(int argc, TCHAR* argv[])
     DWORD callResult;
     debugFile = fopen(DEBUG_FILE_LOCATION, "w");
 
-    callResult = FindProcessIdByAUMID((PWSTR)L"Microsoft.Whiteboard_8wekyb3d8bbwe!Whiteboard");
+
+    // Making sure that the app is not running.
+    callResult = FindProcessIdByAUMID(AUMID);
+    if (callResult)
+    {
+        callResult = MessageBox(NULL, "The app is already running", "Error", MB_OK);
+        return 0;
+    }
+
+    if (callResult == NULL && GetLastError() != ERROR_SUCCESS)
+    {
+        callResult = MessageBox(NULL, "Failed to startup the app", "Error", MB_OK);
+        return 0;
+    }
+
+    callResult = SetCurrentProcessExplicitAppUserModelID(AUMID);
+    if (callResult == S_OK)
+    {
+        fprintf(debugFile, "The AUMID was set correctly\n");
+    }
 
     PWSTR userDir = NULL;
     callResult = SHGetKnownFolderPath(FOLDERID_LocalAppData, NULL, NULL, &userDir);
@@ -104,7 +123,7 @@ int _tmain(int argc, TCHAR* argv[])
             default:
                 fprintf(debugFile, "There is a terminal open. Trying to bring it to foreground\n");
 
-                HWND windowHandle = FindMainWindow(58);
+                HWND windowHandle = FindMainWindow(WindowsTerminalProcessId);
 
                 if (windowHandle)
                 {

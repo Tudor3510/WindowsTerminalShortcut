@@ -151,12 +151,13 @@ DWORD FindProcessIdByAUMID(PWSTR AUMID)
     DWORD result = NULL;
     DWORD callResult = NULL;
 
-    const DWORD ARRAY_INITIAL_SIZE = 80000;
+    const DWORD ARRAY_INITIAL_SIZE = 30000;
     DWORD processesArray[ARRAY_INITIAL_SIZE];
     DWORD processesNo = 0;
 
     // Enumerating the processes in the processesArray
     callResult = EnumProcesses(processesArray, ARRAY_INITIAL_SIZE * sizeof(int), &processesNo);
+    processesNo /= sizeof(int);
 
     if (!callResult)
     {
@@ -168,6 +169,7 @@ DWORD FindProcessIdByAUMID(PWSTR AUMID)
     WCHAR* processAUMID = new WCHAR[lengthProcessAUMID + 1];
     for (int i = 0; i < processesNo; i++)
     {
+        DWORD currProcessId = processesArray[i];
         HANDLE processHandle = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, TRUE, processesArray[i]);
 
         if (processHandle)
@@ -175,7 +177,7 @@ DWORD FindProcessIdByAUMID(PWSTR AUMID)
             lengthProcessAUMID = wcslen(AUMID) + 1;
             callResult = GetApplicationUserModelId(processHandle, (UINT32 *)&lengthProcessAUMID, processAUMID);
 
-            if (wcscmp(AUMID, processAUMID) == 0)
+            if (callResult == ERROR_SUCCESS && wcscmp(AUMID, processAUMID) == 0)
             {
                 result = processesArray[i];
             }
@@ -186,4 +188,11 @@ DWORD FindProcessIdByAUMID(PWSTR AUMID)
         }
 
     }
+
+    if (result == NULL)
+    {
+        SetLastError(ERROR_SUCCESS);
+    }
+
+    return result;
 }
