@@ -151,6 +151,9 @@
     <ClInclude Include="CustomStringConversion.h" />
     <ClInclude Include="Utils.h" />
   </ItemGroup>
+  <ItemGroup>
+    <Manifest Include="WindowsTerminalShortcut.exe.manifest" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
