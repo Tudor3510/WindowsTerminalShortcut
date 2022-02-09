@@ -8,6 +8,7 @@
 					UpgradeCode="{da440121-9fac-48e3-8ce3-c835b2938b2d}">
 
 		<!-- Language 1033 is English-->
+		<!-- The upgrade code should remain the same between the upgrades-->
 
 
 		<Package	InstallerVersion="200"
@@ -20,8 +21,18 @@
 		<MajorUpgrade DowngradeErrorMessage="A newer version of !(loc.ProductName) is already installed." />
 
 		<MediaTemplate
-					EmbedCab="yes"/>
+					EmbedCab="yes"
+					/>
 
+		<!-- Define main app icon -->
+		<Icon Id="icon.ico" SourceFile="$(var.WindowsTerminalShortcut.ProjectDir)icon.ico" />
+
+		<!-- Use the icon.ico for this installer (shows up in Add/Remove programs)-->
+		<Property Id="APPPRODUCTICON">icon.ico</Property>
+
+		<!-- Create a basic UI for the installer -->
+		<UIRef Id="WixUI_Minimal"/>
+		
 		<Feature	Id="ProductFeature"
 					Title="!(loc.ProductName)"
 					Level="1">
@@ -29,25 +40,7 @@
 			<ComponentGroupRef Id="ProductComponents" />
 
 		</Feature>
+		
 	</Product>
-
-	<Fragment>
-		<Directory Id="TARGETDIR" Name="SourceDir">
-			<Directory Id="ProgramFiles64Folder">
-				<Directory Id="INSTALLFOLDER" Name="!(loc.ProductName)" />
-			</Directory>
-		</Directory>
-	</Fragment>
-
-	<Fragment>
-		<ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
-			<!-- TODO: Remove the comments around this Component element and the ComponentRef below in order to add resources to this installer. -->
-			<!-- <Component Id="ProductComponent"> -->
-			<!-- TODO: Insert files, registry keys, and other resources here. -->
-			<!-- </Component> -->
-			<Component Id="WindowsTerminalShortcut.exe" Guid="{c03ad8e9-9dc5-45fe-b03c-efc2066fa4b8}">
-				<File Id="WindowsTerminalShortcut.exe" Name="WindowsTerminalShortcut.exe" Source="$(var.WindowsTerminalShortcut.TargetDir)WindowsTerminalShortcut.exe" />
-			</Component>
-		</ComponentGroup>
-	</Fragment>
+	
 </Wix>

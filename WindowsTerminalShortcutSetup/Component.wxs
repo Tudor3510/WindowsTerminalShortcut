@@ -1,6 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+
 	<Fragment>
-		<!-- TODO: Put your code here. -->
+		<ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
+			<!-- TODO: Remove the comments around this Component element and the ComponentRef below in order to add resources to this installer. -->
+			<!-- <Component Id="ProductComponent"> -->
+			<!-- TODO: Insert files, registry keys, and other resources here. -->
+			<!-- </Component> -->
+			<Component Id="WindowsTerminalShortcut.exe" Guid="{c03ad8e9-9dc5-45fe-b03c-efc2066fa4b8}">
+				<File Id="WindowsTerminalShortcut.exe" Name="WindowsTerminalShortcut.exe" Source="$(var.WindowsTerminalShortcut.TargetDir)WindowsTerminalShortcut.exe" />
+			</Component>
+		</ComponentGroup>
 	</Fragment>
+	
+	
 </Wix>
