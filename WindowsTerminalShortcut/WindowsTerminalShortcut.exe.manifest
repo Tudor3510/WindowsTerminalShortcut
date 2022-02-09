@@ -6,7 +6,7 @@
     name="WindowsTerminalShortcut"
     type="win32"
 />
-<description>Simple keyboard shortcut for Windows Terminal.</description>
+<description>A simple keyboard shortcut for the Windows Terminal</description>
 <dependency>
     <dependentAssembly>
         <assemblyIdentity
