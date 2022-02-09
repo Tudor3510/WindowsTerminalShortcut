@@ -7,8 +7,8 @@
 			<!-- <Component Id="ProductComponent"> -->
 			<!-- TODO: Insert files, registry keys, and other resources here. -->
 			<!-- </Component> -->
-			<Component Id="WindowsTerminalShortcut.exe" Guid="{c03ad8e9-9dc5-45fe-b03c-efc2066fa4b8}">
-				<File Id="WindowsTerminalShortcut.exe" Name="WindowsTerminalShortcut.exe" Source="$(var.WindowsTerminalShortcut.TargetDir)WindowsTerminalShortcut.exe" />
+			<Component Id="WindowsTerminalShortcut" Guid="{c03ad8e9-9dc5-45fe-b03c-efc2066fa4b8}">
+				<File Id="WindowsTerminalShortcutExecutable" Name="WindowsTerminalShortcut.exe" Source="$(var.WindowsTerminalShortcut.TargetDir)WindowsTerminalShortcut.exe" />
 			</Component>
 		</ComponentGroup>
 	</Fragment>

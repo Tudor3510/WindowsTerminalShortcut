@@ -3,9 +3,19 @@
 
 	<Fragment>
 		<Directory Id="TARGETDIR" Name="SourceDir">
+
+			<!-- Start Menu -->
+			<Directory Id="ProgramMenuFolder">
+				<Directory Id="InstallProgramMenuFolder" Name="!(loc.productName)" />
+			</Directory>
+			
+			
+			<!-- Program files (64bit) folder-->
 			<Directory Id="ProgramFiles64Folder">
 				<Directory Id="INSTALLFOLDER" Name="!(loc.ProductName)" />
 			</Directory>
+			
+			
 		</Directory>
 	</Fragment>
 	

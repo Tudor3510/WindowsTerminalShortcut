@@ -28,10 +28,12 @@
 		<Icon Id="icon.ico" SourceFile="$(var.WindowsTerminalShortcut.ProjectDir)icon.ico" />
 
 		<!-- Use the icon.ico for this installer (shows up in Add/Remove programs)-->
-		<Property Id="APPPRODUCTICON">icon.ico</Property>
+		<Property Id="ARPPRODUCTICON">icon.ico</Property>
 
 		<!-- Create a basic UI for the installer -->
 		<UIRef Id="WixUI_Minimal"/>
+
+		<WixVariable Id="WixUILicenseRtf" Value="$(var.ProjectDir)Assets\License.rtf"/>
 		
 		<Feature	Id="ProductFeature"
 					Title="!(loc.ProductName)"
