@@ -6,7 +6,7 @@
 
 			<!-- Start Menu -->
 			<Directory Id="ProgramMenuFolder">
-				<Directory Id="InstallProgramMenuFolder" Name="!(loc.productName)" />
+				<Directory Id="InstallProgramMenuFolder" Name="!(loc.ProductName)" />
 			</Directory>
 			
 			

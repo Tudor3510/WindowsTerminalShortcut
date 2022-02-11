@@ -36,8 +36,7 @@
 
 		<WixVariable Id="WixUILicenseRtf" Value="$(var.ProjectDir)Assets\License.rtf"/>
 		
-		
-		
+
 		<Feature	Id="ProductFeature"
 					Title="!(loc.ProductName)"
 					Level="1">
