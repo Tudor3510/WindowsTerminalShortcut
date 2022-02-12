@@ -4,6 +4,7 @@
 #include <tchar.h>
 #include <ShlObj.h>
 #include <strsafe.h>
+#include <appmodel.h>
 
 #include "Utils.h"
 #include "CustomStringConversion.h"
@@ -23,6 +24,19 @@ int _tmain(int argc, TCHAR* argv[])
     DWORD callResult;
     debugFile = fopen(DEBUG_FILE_LOCATION, "w");
 
+    HANDLE processHandle = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, TRUE, 9544);
+
+    if (processHandle)
+    {
+        WCHAR processAumid[300];
+        UINT32 lengthProcessAumid = 300;
+        callResult = GetApplicationUserModelId(processHandle, &lengthProcessAumid, processAumid);
+
+        if (callResult == 0)
+        {
+            callResult = GetLastError();
+        }
+    }
 
     // Making sure that the app is not running.
     callResult = FindProcessIdByAUMID(AUMID);

@@ -4,11 +4,9 @@
 	<Fragment>
 		<Directory Id="TARGETDIR" Name="SourceDir">
 
-			<!-- Start Menu -->
 			<Directory Id="ProgramMenuFolder">
 				<Directory Id="InstallProgramMenuFolder" Name="!(loc.ProductName)" />
 			</Directory>
-			
 			
 			<!-- Program files (64bit) folder-->
 			<Directory Id="ProgramFiles64Folder">

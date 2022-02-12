@@ -12,12 +12,32 @@
 			<Component Id="WindowsTerminalShortcut" Guid="{c03ad8e9-9dc5-45fe-b03c-efc2066fa4b8}">
 				<File Id="WindowsTerminalShortcutExecutable" Name="WindowsTerminalShortcut.exe" Source="$(var.WindowsTerminalShortcut.TargetDir)WindowsTerminalShortcut.exe" />
 			</Component>
-
-			<Component Id="RemoveStartMenu" Guid="{B95F5EF5-D74A-4352-8307-9E4ED223E55E}">
-				<RemoveFolder Id="RemoveStartMenu" Directory="InstallProgramMenuFolder" On="uninstall"/>
-			</Component>
 			
 		</ComponentGroup>
+	
+		<ComponentGroup Id="AppShortcutComponents" Directory="ProgramMenuFolder">
+			<Component Id="AppShortcutComponent" Guid="{7DA18369-1CC2-43FC-9104-3B827D21AAEA}">
+				
+				<Shortcut Id="MainAppShortcut"
+                  Name="!(loc.ProductName)"
+                  Target="[INSTALLFOLDER]WindowsTerminalShortcut.exe"
+                  Directory="InstallProgramMenuFolder"
+                  WorkingDirectory="INSTALLFOLDER"
+                  Icon="icon.ico">
+					
+				
+					<ShortcutProperty Key="System.AppUserModel.ID" Value="Tudor3510.WindowsTerminalShortcut.385bds23"/>
+				
+                 </Shortcut>
+				
+			<RegistryValue Id="RegShortcutKey" Root="HKCU" Key="SOFTWARE\$(loc.ProductName)" Name="Shortcut" Value="1" Type="integer" KeyPath="yes" />
+
+			<RemoveFolder Id="RemoveStartMenu" Directory="InstallProgramMenuFolder" On="uninstall"/>
+		
+			</Component>
+		</ComponentGroup>
+	
+	
 	</Fragment>
 	
 	
