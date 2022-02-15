@@ -14,6 +14,7 @@ const DWORD WT_APPDATA_PATH_LENGTH = 32;
 
 const PSTR WT_NAME = (PSTR)"WindowsTerminal.exe";
 const PWSTR AUMID = (PWSTR)L"Tudor3510.WindowsTerminalShortcut.385bds23";
+const PWSTR WT_AUMID = (PWSTR)L"Microsoft.WindowsTerminal_8wekyb3d8bbwe!App";
 const PSTR MUTEX_NAME = (PSTR)"WindowsTerminalShortcut.385bds23";
 const int THREAD_HOTKEY_ID = 27;
 const char DEBUG_FILE_LOCATION[] = "C:\\Users\\windows\\Desktop\\Debug-File.txt";
@@ -131,7 +132,7 @@ int _tmain(int argc, TCHAR* argv[])
                 fprintf(debugFile, "There is a terminal open. Trying to bring it to foreground\n");
 #endif
 
-                HWND windowHandle = FindMainWindow(WindowsTerminalProcessId);
+                HWND windowHandle = FindMainWindowPID(WindowsTerminalProcessId);
 
                 if (windowHandle)
                 {

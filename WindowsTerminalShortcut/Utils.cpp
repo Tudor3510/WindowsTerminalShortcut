@@ -5,19 +5,23 @@
 #include "Utils.h"
 
 
+const DWORD BUFFER_LENGTH = 100;
+
 // A struct that will help us in the Enum Windows Callback function
 // We will pass a pointer from the Find Main Window function to the callback function and the callback function will return when we find the desired window
 struct HandleWindowsData {
     DWORD process_id;
     HWND window_handle;
+    PWSTR AUMID;
 };
 
-// The callback function that will be called with the EnumWindows function
+
+// The callback function that will be called with the EnumWindows function called in the FindMainWindowPid function
 // It will be called more than one time and each time will get a different handle.
 // This will be repeated until we find the window we desire or until all the windows opened in our OS are processed in this function
 // We should return false when we want to stop the iteration through the windows.
 // If all the windows are iterated and we didnt return FALSE in an iteration, this function will return TRUE.
-BOOL CALLBACK EnumWindowsCallback(HWND handle, LPARAM lParam)
+BOOL CALLBACK EnumWindowsCallbackPID(HWND handle, LPARAM lParam)
 {
     DWORD GetWindowThreadProcessIdResult = NULL;
 
@@ -39,16 +43,79 @@ BOOL CALLBACK EnumWindowsCallback(HWND handle, LPARAM lParam)
 }
 
 // This is the function that finds the HWND of the main window of a given process id
-// It uses the EnumWindows function (from windows.h) in order to iterate through all the opened windows in the callback function (EnumWindowsCallback)
+// It uses the EnumWindows function (from windows.h) in order to iterate through all the opened windows in the callback function (EnumWindowsCallbackPID)
 // It returns the HWND of the given process
-HWND FindMainWindow(DWORD process_id)
+HWND FindMainWindowPID(DWORD process_id)
 {
     BOOL EnumWindowsResult = NULL;
 
     HandleWindowsData data;
     data.process_id = process_id;
     data.window_handle = NULL;
-    EnumWindowsResult = EnumWindows(EnumWindowsCallback, (LPARAM)&data);
+    data.AUMID = NULL;
+    EnumWindowsResult = EnumWindows(EnumWindowsCallbackPID, (LPARAM)&data);
+
+    if (EnumWindowsResult == TRUE && data.window_handle == 0)
+    {
+        SetLastError(NO_MAIN_WINDOW);
+    }
+
+    return data.window_handle;
+}
+
+BOOL CALLBACK EnumWindowsCallbackAUMID(HWND handle, LPARAM lParam)
+{
+    DWORD GetWindowThreadProcessIdResult = NULL;
+
+    HandleWindowsData* data = (HandleWindowsData*)lParam;
+    DWORD process_id = NULL;
+    GetWindowThreadProcessIdResult = GetWindowThreadProcessId(handle, &process_id);
+
+    if (GetWindowThreadProcessIdResult == NULL)
+    {
+        SetLastError(CANT_GET_PROCESS_ID_OF_WINDOW);
+        return FALSE;
+    }
+
+    if (!IsWindowVisible(handle))
+        return TRUE;
+
+    HANDLE processHandle = OpenProcess(PROCESS_QUERY_INFORMATION, TRUE, process_id);
+    if (processHandle == NULL)
+    {
+        DWORD toClearErrorStack = GetLastError();
+        return TRUE;
+    }
+    else
+    {
+        UINT32 returnBufferLength = BUFFER_LENGTH;
+        WCHAR returnBuffer[BUFFER_LENGTH];
+        DWORD callResult = GetApplicationUserModelId(processHandle, &returnBufferLength, returnBuffer);
+
+        if (callResult != ERROR_SUCCESS)
+        {
+            return TRUE;
+        }
+
+        if (wcscmp(returnBuffer, data->AUMID) != 0)
+        {
+            return TRUE;
+        }
+    }
+
+    data->window_handle = handle;
+    return FALSE;
+}
+
+HWND FindMainWindowAUMID(PWSTR AUMID)
+{
+    BOOL EnumWindowsResult = NULL;
+
+    HandleWindowsData data;
+    data.process_id = NULL;
+    data.window_handle = NULL;
+    data.AUMID = AUMID;
+    EnumWindowsResult = EnumWindows(EnumWindowsCallbackAUMID, (LPARAM)&data);
 
     if (EnumWindowsResult == TRUE && data.window_handle == 0)
     {

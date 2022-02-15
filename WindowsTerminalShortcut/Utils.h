@@ -20,9 +20,9 @@
 
 
 // This is the function that finds the HWND of the main window of a given process id
-// It uses the EnumWindows function (from windows.h) in order to iterate through all the opened windows in the callback function (EnumWindowsCallback)
+// It uses the EnumWindows function (from windows.h) in order to iterate through all the opened windows in the callback function (EnumWindowsCallbackPID)
 // It returns the HWND of the given process
-HWND FindMainWindow(DWORD process_id);
+HWND FindMainWindowPID(DWORD process_id);
 
 // Starts the app at the specified path
 BOOL StartupProcess(LPCTSTR lpApplicationPath);
