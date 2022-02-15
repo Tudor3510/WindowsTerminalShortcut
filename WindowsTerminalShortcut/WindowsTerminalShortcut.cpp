@@ -46,6 +46,7 @@ int _tmain(int argc, TCHAR* argv[])
 	if (callResult != ERROR_SUCCESS)
 	{
 		callResult = MessageBox(NULL, "The app is already running", "Error", MB_OK);
+		CloseHandle(mutexHandle);
 		return 0;
 	}
 

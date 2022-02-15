@@ -10,7 +10,11 @@
 			<!-- TODO: Insert files, registry keys, and other resources here. -->
 			<!-- </Component> -->
 			<Component Id="WindowsTerminalShortcut" Guid="{c03ad8e9-9dc5-45fe-b03c-efc2066fa4b8}">
-				<File Id="WindowsTerminalShortcutExecutable" Name="WindowsTerminalShortcut.exe" Source="$(var.WindowsTerminalShortcut.TargetDir)WindowsTerminalShortcut.exe" />
+				<File Id="WindowsTerminalShortcutExecutable" Name="Windows Terminal Shortcut.exe" Source="$(var.WindowsTerminalShortcut.TargetDir)Windows Terminal Shortcut.exe"/>
+				
+				<RegistryValue Id="ApplicationKey" Root="HKCU" Key="Software\!(loc.ProductName)" Name="Application" Value="1" Type="integer" KeyPath="yes" />
+
+				<RemoveFolder Id="RemoveInstallFolder" Directory="INSTALLFOLDER" On="uninstall"/>
 			</Component>
 
 			<Component Id="WindowsTerminalShortcutRegistryStartup" Guid="{B394F02F-50EB-44EB-BDDE-70C39250B24C}">
@@ -19,7 +23,7 @@
 					Root="HKCU"
 					Key="Software\Microsoft\Windows\CurrentVersion\Run"
 					Name="WindowsTerminalShortcut"
-					Value="&quot;[INSTALLFOLDER]WindowsTerminalShortcut.exe&quot;"
+					Value="&quot;[INSTALLFOLDER]Windows Terminal Shortcut.exe&quot;"
 					Type="string"
 					KeyPath="yes"
 					/>
@@ -33,7 +37,7 @@
 
 				<Shortcut Id="MainAppShortcut"
                   Name="!(loc.ProductName)"
-                  Target="[INSTALLFOLDER]WindowsTerminalShortcut.exe"
+                  Target="[INSTALLFOLDER]Windows Terminal Shortcut.exe"
                   Directory="InstallProgramMenuFolder"
                   WorkingDirectory="INSTALLFOLDER"
                   Icon="icon.ico">
