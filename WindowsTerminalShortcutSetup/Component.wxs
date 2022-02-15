@@ -12,31 +12,46 @@
 			<Component Id="WindowsTerminalShortcut" Guid="{c03ad8e9-9dc5-45fe-b03c-efc2066fa4b8}">
 				<File Id="WindowsTerminalShortcutExecutable" Name="WindowsTerminalShortcut.exe" Source="$(var.WindowsTerminalShortcut.TargetDir)WindowsTerminalShortcut.exe" />
 			</Component>
+
+			<!--
+			<Component Id="WindowsTerminalShortcutRegistryStartup" Guid="{B394F02F-50EB-44EB-BDDE-70C39250B24C}">
+				<RegistryValue
+					Id="RegStartup"
+					Root="HKCU"
+					Key="Software\Microsoft\Windows\CurrentVersion\Run"
+					Name="WindowsTerminalShortcut"
+					Value="[INSTALLFOLDER]!(loc.ProductName)\WindowsTerminalShortcut.exe"
+					Type="string"
+					KeyPath="yes"
+					/>
+			</Component>
+			-->
+			
 			
 		</ComponentGroup>
-	
+
 		<ComponentGroup Id="AppShortcutComponents" Directory="ProgramMenuFolder">
 			<Component Id="AppShortcutComponent" Guid="{7DA18369-1CC2-43FC-9104-3B827D21AAEA}">
-				
+
 				<Shortcut Id="MainAppShortcut"
                   Name="!(loc.ProductName)"
                   Target="[INSTALLFOLDER]WindowsTerminalShortcut.exe"
                   Directory="InstallProgramMenuFolder"
                   WorkingDirectory="INSTALLFOLDER"
                   Icon="icon.ico">
-					
-				
-					<ShortcutProperty Key="System.AppUserModel.ID" Value="Tudor3510.WindowsTerminalShortcut.385bds23"/>
-				
-                 </Shortcut>
-				
-			<RegistryValue Id="RegShortcutKey" Root="HKCU" Key="SOFTWARE\$(loc.ProductName)" Name="Shortcut" Value="1" Type="integer" KeyPath="yes" />
 
-			<RemoveFolder Id="RemoveStartMenu" Directory="InstallProgramMenuFolder" On="uninstall"/>
-		
+
+					<ShortcutProperty Key="System.AppUserModel.ID" Value="Tudor3510.WindowsTerminalShortcut.385bds23"/>
+
+				</Shortcut>
+
+				<RegistryValue Id="RegShortcutKey" Root="HKCU" Key="Software\!(loc.ProductName)" Name="Shortcut" Value="1" Type="integer" KeyPath="yes" />
+
+				<RemoveFolder Id="RemoveStartMenu" Directory="InstallProgramMenuFolder" On="uninstall"/>
+
 			</Component>
+
 		</ComponentGroup>
-	
 	
 	</Fragment>
 	
