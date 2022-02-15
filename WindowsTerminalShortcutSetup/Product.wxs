@@ -13,7 +13,7 @@
 
 		<Package	InstallerVersion="200"
 					Compressed="yes"
-					InstallScope="perUser"
+					InstallScope="perMachine"
 					Platform="$(var.Platform)"
 					Manufacturer="!(loc.Company)"
 					Description="!(loc.Description)"/>

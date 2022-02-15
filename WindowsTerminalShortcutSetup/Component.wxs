@@ -13,19 +13,17 @@
 				<File Id="WindowsTerminalShortcutExecutable" Name="WindowsTerminalShortcut.exe" Source="$(var.WindowsTerminalShortcut.TargetDir)WindowsTerminalShortcut.exe" />
 			</Component>
 
-			<!--
 			<Component Id="WindowsTerminalShortcutRegistryStartup" Guid="{B394F02F-50EB-44EB-BDDE-70C39250B24C}">
 				<RegistryValue
 					Id="RegStartup"
 					Root="HKCU"
 					Key="Software\Microsoft\Windows\CurrentVersion\Run"
 					Name="WindowsTerminalShortcut"
-					Value="[INSTALLFOLDER]!(loc.ProductName)\WindowsTerminalShortcut.exe"
+					Value="&quot;[INSTALLFOLDER]WindowsTerminalShortcut.exe&quot;"
 					Type="string"
 					KeyPath="yes"
 					/>
 			</Component>
-			-->
 			
 			
 		</ComponentGroup>
