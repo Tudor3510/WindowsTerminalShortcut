@@ -3,7 +3,7 @@
 <assemblyIdentity
     version="0.0.1.0"
     processorArchitecture="amd64"
-    name="WindowsTerminalShortcut"
+    name="Windows Terminal Shortcut"
     type="win32"
 />
 <description>A simple keyboard shortcut for the Windows Terminal</description>
