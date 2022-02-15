@@ -24,6 +24,8 @@
 // It returns the HWND of the given process
 HWND FindMainWindowPID(DWORD process_id);
 
+HWND FindMainWindowAUMID(PWSTR AUMID);
+
 // Starts the app at the specified path
 BOOL StartupProcess(LPCTSTR lpApplicationPath);
 
