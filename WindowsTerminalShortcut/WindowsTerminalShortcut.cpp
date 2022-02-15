@@ -14,6 +14,7 @@ const DWORD WT_APPDATA_PATH_LENGTH = 32;
 
 const PSTR WT_NAME = (PSTR)"WindowsTerminal.exe";
 const PWSTR AUMID = (PWSTR)L"Tudor3510.WindowsTerminalShortcut.385bds23";
+const PSTR MUTEX_NAME = (PSTR)"WindowsTerminalShortcut.385bds23";
 const int THREAD_HOTKEY_ID = 27;
 const char DEBUG_FILE_LOCATION[] = "C:\\Users\\windows\\Desktop\\Debug-File.txt";
 
@@ -22,55 +23,42 @@ FILE* debugFile;
 int _tmain(int argc, TCHAR* argv[])
 {
     DWORD callResult;
+
+#ifdef _DEBUG
     debugFile = fopen(DEBUG_FILE_LOCATION, "w");
+#endif
 
-    HANDLE processHandle = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, TRUE, 9544);
+    callResult = GetLastError();
 
-    if (processHandle)
+    // Creating a mutex so that we can know if the app is already running
+    HANDLE mutexHandle = CreateMutexA(NULL, TRUE, MUTEX_NAME);
+    callResult = GetLastError();
+
+    // Verify if we receive a valid handle to the mutex
+    if (mutexHandle == NULL)
     {
-        WCHAR processAumid[300];
-        UINT32 lengthProcessAumid = 300;
-        callResult = GetApplicationUserModelId(processHandle, &lengthProcessAumid, processAumid);
-
-        if (callResult == 0)
-        {
-            callResult = GetLastError();
-        }
+        callResult = MessageBox(NULL, "Failed to set the app identity using mutex", "Error", MB_OK);
+        return 0;
     }
 
-    // Making sure that the app is not running.
-    callResult = FindProcessIdByAUMID(AUMID);
-    if (callResult)
+    // Verify if the mutex was already created
+    if (callResult != ERROR_SUCCESS)
     {
         callResult = MessageBox(NULL, "The app is already running", "Error", MB_OK);
         return 0;
-    }
-
-    if (callResult == NULL && GetLastError() != ERROR_SUCCESS)
-    {
-        callResult = MessageBox(NULL, "Failed to startup the app", "Error", MB_OK);
-        return 0;
-    }
-
-    callResult = SetCurrentProcessExplicitAppUserModelID(AUMID);
-    if (callResult == S_OK)
-    {
-        fprintf(debugFile, "The AUMID was set correctly\n");
     }
 
     PWSTR userDir = NULL;
     callResult = SHGetKnownFolderPath(FOLDERID_LocalAppData, NULL, NULL, &userDir);
     if (callResult == E_FAIL)
     {
-        fprintf(debugFile, "SHGetKnownFolderPath failed\n");
+        callResult = MessageBox(NULL, "SHGetKnownFolderPath failed", "Error", MB_OK);
+        return 0;
     }
     else if (callResult == E_INVALIDARG)
     {
-        fprintf(debugFile, "SHGetKnownFolderPath has got an invalid argument\n");
-    }
-    else
-    {
-        fprintf(debugFile, "SHGetKnownFolderPath worked as it should\n");
+        callResult = MessageBox(NULL, "SHGetKnownFolderPath has got an invalid argument", "Error", MB_OK);
+        return 0;
     }
 
     //Copying the obtained user dir to wtFinalPath
@@ -81,19 +69,24 @@ int _tmain(int argc, TCHAR* argv[])
     switch (callResult)
     {
     case S_OK:
+#ifdef _DEBUG
         fprintf(debugFile, "WT_PATH_PART2 was concatened successfully\n");
+#endif
         break;
 
     case STRSAFE_E_INVALID_PARAMETER:
-        fprintf(debugFile, "StringCchCatA received an invalid parameter\n");
+        callResult = MessageBox(NULL, "StringCchCatA received an invalid parameter", "Error", MB_OK);
+        return 0;
         break;
 
     case STRSAFE_E_INSUFFICIENT_BUFFER:
-        fprintf(debugFile, "The memory location that should contain the string after using StringCchCatA is not large enough\n");
+        callResult = MessageBox(NULL, "The memory location that should contain the string after using StringCchCatA is not large enough", "Error", MB_OK);
+        return 0;
         break;
 
     default:
-        fprintf(debugFile, "Something went wrong with StringCchCatA function\n");
+        callResult = MessageBox(NULL, "Something went wrong with StringCchCatA function", "Error", MB_OK);
+        return 0;
         break;
     }
 
@@ -101,13 +94,10 @@ int _tmain(int argc, TCHAR* argv[])
     CoTaskMemFree(userDir);
 
     callResult = RegisterHotKey(NULL, THREAD_HOTKEY_ID, MOD_CONTROL | MOD_ALT | MOD_NOREPEAT, 0x54);  //0x54 is 'T'
-    if (callResult)
+    if (!callResult)
     {
-        fprintf(debugFile, "Hotkey 'CTRL+ALT+T' registered, using MOD_NOREPEAT flag\n");
-    }
-    else
-    {
-        fprintf(debugFile, "Hotkey could not be registered\n");
+        callResult = MessageBox(NULL, "Hotkey could not be registered", "Error", MB_OK);
+        return 0;
     }
 
 
@@ -128,14 +118,18 @@ int _tmain(int argc, TCHAR* argv[])
             case 0:
                 if (GetLastError() == ERROR_SUCCESS)
                 {
+#ifdef _DEBUG
                     fprintf(debugFile, "There is no terminal open. Trying to open one\n");
+#endif
                     StartupProcess(wtFinalPath);
                 }
 
                 break;
 
             default:
+#ifdef _DEBUG
                 fprintf(debugFile, "There is a terminal open. Trying to bring it to foreground\n");
+#endif
 
                 HWND windowHandle = FindMainWindow(WindowsTerminalProcessId);
 
@@ -145,6 +139,7 @@ int _tmain(int argc, TCHAR* argv[])
                     {
 
                         callResult = ShowWindow(windowHandle, SW_NORMAL);
+#ifdef _DEBUG
                         if (callResult)
                         {
                             fprintf(debugFile, "Windows Terminal was restored correctly from the taskbar to the foreground\n");
@@ -153,11 +148,12 @@ int _tmain(int argc, TCHAR* argv[])
                         {
                             fprintf(debugFile, "Can not restore the window from the taskbar to the foreground\n");
                         }
-
+#endif
                     }
                     else
                     {
                         callResult = SetForegroundWindow(windowHandle);
+#ifdef _DEBUG
                         if (callResult)
                         {
                             fprintf(debugFile, "Windows Terminal was set correctly to the foreground\n");
@@ -166,6 +162,7 @@ int _tmain(int argc, TCHAR* argv[])
                         {
                             fprintf(debugFile, "Can not bring the window to the foreground\n");
                         }
+#endif
                     }
                 }
                 break;
@@ -175,24 +172,33 @@ int _tmain(int argc, TCHAR* argv[])
 
         case WM_CLOSE:
         {
+#ifdef _DEBUG
             fprintf(debugFile, "WM_CLOSE received\n");
+#endif
             shouldContinue = FALSE;
             break;
         }
 
         case WM_QUIT:
         {
+#ifdef _DEBUG
             fprintf(debugFile, "WM_QUIT received\n");
+#endif
             shouldContinue = FALSE;
             break;
         }
         }
+#ifdef _DEBUG
         fflush(debugFile);
-
         fprintf(debugFile, "\n");
+#endif
     }
 
-    if (UnregisterHotKey(NULL, THREAD_HOTKEY_ID))
+
+    callResult = UnregisterHotKey(NULL, THREAD_HOTKEY_ID);
+
+#ifdef _DEBUG
+    if (callResult)
     {
         fprintf(debugFile, "Hotkey 'CTRL+ALT+T' unregistered\n");
     }
@@ -200,10 +206,15 @@ int _tmain(int argc, TCHAR* argv[])
     {
         fprintf(debugFile, "Hotkey could not be unregistered\n");
     }
+#endif
 
 
     delete[] wtFinalPath;
+    CloseHandle(mutexHandle);
+
+#ifdef _DEBUG
     fclose(debugFile);
+#endif
 
     return 0;
 }
