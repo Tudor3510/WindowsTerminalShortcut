@@ -21,12 +21,22 @@
 
 // This is the function that finds the HWND of the main window of a given process id
 // It uses the EnumWindows function (from windows.h) in order to iterate through all the opened windows in the callback function (EnumWindowsCallbackPID)
-// It returns the HWND of the given process
+// It returns the HWND of the given window
+// If there is an error the function returns NULL and to get extended error information, call GetLastError.
+// If the function succeeds and there is no main windows for that process, the function returns NULL and GetLastError will return NO_MAIN_WINDOW
+// GetLastError should be called if the functions returns NULL in order to clear the thread's error stack.
 HWND FindMainWindowPID(DWORD process_id);
 
+// This is the function that finds the HWND of the main window of a given process id
+// It uses the EnumWindows function (from windows.h) in order to iterate through all the opened windows in the callback function (EnumWindowsCallbackAUMID)
+// It returns the HWND of the given window
+// If there is an error the function returns NULL and to get extended error information, call GetLastError.
+// If the function succeeds and there is no main windows for that process, the function returns NULL and GetLastError will return NO_MAIN_WINDOW
+// GetLastError should be called if the functions returns NULL in order to clear the thread's error stack.
 HWND FindMainWindowAUMID(PWSTR AUMID);
 
 // Starts the app at the specified path
+// If the function fails, it returns zero and extended error information can be retrieved using GetLastError
 BOOL StartupProcess(PWSTR lpApplicationPath);
 
 
