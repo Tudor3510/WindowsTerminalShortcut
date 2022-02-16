@@ -10,14 +10,15 @@
 			</Directory>
 			
 			<!-- %localappdata%\Programs folder -->
-			<Directory Id="LocalAppDataFolder">
-				<Directory Id="LocalAppDataProgramsFolder" Name="Programs">
-					<Directory Id="INSTALLFOLDER" Name="!(loc.ProductName)" />
-				</Directory>
+			<Directory Id="LocalAppDataProgramsFolder">
+				<Directory Id="INSTALLFOLDER" Name="!(loc.ProductName)" />
 			</Directory>
 			
 			
 		</Directory>
+	
+		<!-- Setting the directory with the id "LocalAppDataProgramsFolder" to point to %localappdata%\Programs !!! I am not sure that %localappdata%\Programs exists on every machine !!!! s-->
+	<SetDirectory Id="LocalAppDataProgramsFolder" Value="[LocalAppDataFolder]Programs" />
 	</Fragment>
 	
 	
