@@ -11,6 +11,7 @@
 		<!-- The upgrade code should remain the same between the upgrades-->
 
 
+		<!-- Some installer features and settings. Also some product description -->
 		<Package	InstallerVersion="200"
 					Compressed="yes"
 					InstallScope="perUser"
@@ -18,8 +19,10 @@
 					Manufacturer="!(loc.Company)"
 					Description="!(loc.Description)"/>
 
+		<!-- The downgrade message(when you try to install an older version over a newer one -->
 		<MajorUpgrade DowngradeErrorMessage="A newer version of !(loc.ProductName) is already installed." />
 
+		<!-- Embed the Windows Cabinet archive -->
 		<MediaTemplate
 					EmbedCab="yes"
 			/>
@@ -34,14 +37,21 @@
 		<!-- Create a basic UI for the installer -->
 		<UIRef Id="WixUI_Minimal"/>
 
+		<!-- The license that will appear when you install the file -->
 		<WixVariable Id="WixUILicenseRtf" Value="$(var.ProjectDir)Assets\License.rtf"/>
 		
-
+		
+		<!-- The features that installs with the product -->
 		<Feature	Id="ProductFeature"
 					Title="!(loc.ProductName)"
 					Level="1">
-
+			
+			<!-- The product components group. Contains the executable, the registry KeyPath for the executable
+			     the registry for the startup and the option to remove the folder on uninstall -->
 			<ComponentGroupRef Id="ProductComponents" />
+			
+			<!-- The shortcut components group. Contains the start menu shortcut(and folder), the registry KeyPath for the shortcut
+				 and the option to remove the start menu folder on uninstall -->
 			<ComponentGroupRef Id="AppShortcutComponents"/>
 
 		</Feature>

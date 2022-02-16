@@ -4,7 +4,8 @@
 	<Fragment>
 		<Directory Id="TARGETDIR" Name="SourceDir">
 
-			<!-- The menu folder, where shortcut will be installed -->
+			<!-- The menu folder, where shortcut will be installed 
+			     The ProgramMenuFolder is a WiX variable and points to where the shortcuts are installed -->
 			<Directory Id="ProgramMenuFolder">
 				<Directory Id="InstallProgramMenuFolder" Name="!(loc.ProductName)" />
 			</Directory>
@@ -17,8 +18,9 @@
 			
 		</Directory>
 	
-		<!-- Setting the directory with the id "LocalAppDataProgramsFolder" to point to %localappdata%\Programs !!! I am not sure that %localappdata%\Programs exists on every machine !!!! s-->
+	<!-- Setting the directory with the id "LocalAppDataProgramsFolder" to point to %localappdata%\Programs !!! I am not sure that %localappdata%\Programs exists on every machine !!!! -->
 	<SetDirectory Id="LocalAppDataProgramsFolder" Value="[LocalAppDataFolder]Programs" />
+	
 	</Fragment>
 	
 	

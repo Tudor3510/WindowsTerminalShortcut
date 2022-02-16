@@ -9,6 +9,8 @@
 			<!-- <Component Id="ProductComponent"> -->
 			<!-- TODO: Insert files, registry keys, and other resources here. -->
 			<!-- </Component> -->
+			
+			<!-- The component for the executable -->
 			<Component Id="WindowsTerminalShortcut" Guid="{c03ad8e9-9dc5-45fe-b03c-efc2066fa4b8}">
 				<File Id="WindowsTerminalShortcutExecutable" Name="Windows Terminal Shortcut.exe" Source="$(var.WindowsTerminalShortcut.TargetDir)Windows Terminal Shortcut.exe"/>
 				
@@ -17,6 +19,8 @@
 				<RemoveFolder Id="RemoveInstallFolder" Directory="INSTALLFOLDER" On="uninstall"/>
 			</Component>
 
+			
+			<!-- The component that contains the registry for the startup -->
 			<Component Id="WindowsTerminalShortcutRegistryStartup" Guid="{B394F02F-50EB-44EB-BDDE-70C39250B24C}">
 				<RegistryValue
 					Id="RegStartup"
@@ -29,9 +33,11 @@
 					/>
 			</Component>
 			
-			
 		</ComponentGroup>
+		
+		
 
+		<!-- Shortcut Components Group -->
 		<ComponentGroup Id="AppShortcutComponents" Directory="ProgramMenuFolder">
 			<Component Id="AppShortcutComponent" Guid="{7DA18369-1CC2-43FC-9104-3B827D21AAEA}">
 
@@ -42,11 +48,11 @@
                   WorkingDirectory="INSTALLFOLDER"
                   Icon="icon.ico">
 
-
 					<ShortcutProperty Key="System.AppUserModel.ID" Value="Tudor3510.WindowsTerminalShortcut.385bds23"/>
 
 				</Shortcut>
 
+				
 				<RegistryValue Id="RegShortcutKey" Root="HKCU" Key="Software\!(loc.ProductName)" Name="Shortcut" Value="1" Type="integer" KeyPath="yes" />
 
 				<RemoveFolder Id="RemoveStartMenu" Directory="InstallProgramMenuFolder" On="uninstall"/>

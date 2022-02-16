@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <WixLocalization Culture="en-us" xmlns="http://schemas.microsoft.com/wix/2006/localization">
 
+	<!-- Some values that are used in more than one place -->
 	<String Id="ProductName">Windows Terminal Shortcut</String>
 	<String Id="Company">Tudor3510</String>
 	<String Id="Description">A simple keyboard shortcut for the Windows Terminal</String>
