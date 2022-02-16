@@ -22,7 +22,7 @@ const char DEBUG_FILE_LOCATION[] = "C:\\Users\\windows\\Desktop\\Debug-File.txt"
 
 FILE* debugFile;
 
-int _tmain(int argc, TCHAR* argv[])
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 {
 	DWORD callResult;
 
