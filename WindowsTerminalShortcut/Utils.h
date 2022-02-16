@@ -27,14 +27,15 @@ HWND FindMainWindowPID(DWORD process_id);
 HWND FindMainWindowAUMID(PWSTR AUMID);
 
 // Starts the app at the specified path
-BOOL StartupProcess(LPCTSTR lpApplicationPath);
+BOOL StartupProcess(PWSTR lpApplicationPath);
 
 
 // This function will return the processId of the first process found that has the given name
 // If the process does not exist, it will return NULL and will set the last error to 0
 // If the process exists, it will return the process id, but the last error will NOT be set to 0.
 // If there is an error, it will return NULL, but the last error will not be set to 0, it will be set according to the error description
-DWORD FindProcessIdByName(PSTR processname);
+DWORD FindProcessIdByName(PWSTR processname);
 
-
+/*
 DWORD FindProcessIdByAUMID(PWSTR AUMID);
+*/

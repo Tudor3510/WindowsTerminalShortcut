@@ -9,13 +9,14 @@
 #include "Utils.h"
 #include "CustomStringConversion.h"
 
-const PSTR WT_APPDATA_PATH = (PSTR)"\\Microsoft\\WindowsApps\\wt.exe";
+const PWSTR WT_APPDATA_PATH = (PWSTR)L"\\Microsoft\\WindowsApps\\wt.exe";
 const DWORD WT_APPDATA_PATH_LENGTH = 32;
+const DWORD WT_FINAL_PATH_BUFFER_LENGTH = 150;
 
-const PSTR WT_NAME = (PSTR)"WindowsTerminal.exe";
+const PWSTR WT_NAME = (PWSTR)L"WindowsTerminal.exe";
 const PWSTR AUMID = (PWSTR)L"Tudor3510.WindowsTerminalShortcut.385bds23";
 const PWSTR WT_AUMID = (PWSTR)L"Microsoft.WindowsTerminal_8wekyb3d8bbwe!App";
-const PSTR MUTEX_NAME = (PSTR)"WindowsTerminalShortcut.385bds23";
+const PWSTR MUTEX_NAME = (PWSTR)L"WindowsTerminalShortcut.385bds23";
 const int THREAD_HOTKEY_ID = 27;
 const char DEBUG_FILE_LOCATION[] = "C:\\Users\\windows\\Desktop\\Debug-File.txt";
 
@@ -29,23 +30,21 @@ int _tmain(int argc, TCHAR* argv[])
 	debugFile = fopen(DEBUG_FILE_LOCATION, "w");
 #endif
 
-	callResult = GetLastError();
-
 	// Creating a mutex so that we can know if the app is already running
-	HANDLE mutexHandle = CreateMutexA(NULL, TRUE, MUTEX_NAME);
+	HANDLE mutexHandle = CreateMutexW(NULL, TRUE, MUTEX_NAME);
 	callResult = GetLastError();
 
 	// Verify if we receive a valid handle to the mutex
 	if (mutexHandle == NULL)
 	{
-		callResult = MessageBox(NULL, "Failed to set the app identity using mutex", "Error", MB_OK);
+		callResult = MessageBox(NULL, L"Failed to set the app identity using mutex", L"Error", MB_OK);
 		return 0;
 	}
 
 	// Verify if the mutex was already created
 	if (callResult != ERROR_SUCCESS)
 	{
-		callResult = MessageBox(NULL, "The app is already running", "Error", MB_OK);
+		callResult = MessageBox(NULL, L"The app is already running", L"Error", MB_OK);
 		CloseHandle(mutexHandle);
 		return 0;
 	}
@@ -54,42 +53,31 @@ int _tmain(int argc, TCHAR* argv[])
 	callResult = SHGetKnownFolderPath(FOLDERID_LocalAppData, NULL, NULL, &userDir);
 	if (callResult == E_FAIL)
 	{
-		callResult = MessageBox(NULL, "SHGetKnownFolderPath failed", "Error", MB_OK);
+		callResult = MessageBox(NULL, L"SHGetKnownFolderPath failed", L"Error", MB_OK);
 		return 0;
 	}
 	else if (callResult == E_INVALIDARG)
 	{
-		callResult = MessageBox(NULL, "SHGetKnownFolderPath has got an invalid argument", "Error", MB_OK);
+		callResult = MessageBox(NULL, L"SHGetKnownFolderPath has got an invalid argument", L"Error", MB_OK);
 		return 0;
 	}
 
 	//Copying the obtained user dir to wtFinalPath
-	LPSTR wtFinalPath = wcharToChar(userDir);
+	PWSTR wtFinalPath = new WCHAR[WT_FINAL_PATH_BUFFER_LENGTH];
+
+	callResult = wcscpy_s(wtFinalPath, WT_FINAL_PATH_BUFFER_LENGTH, userDir);
+	if (callResult != S_OK)
+	{
+		callResult = MessageBox(NULL, L"Could not copy userDir to wtFinalPath", L"Error", MB_OK);
+		return 0;
+	}
 
 	//Concating the location of WindowsTerminal to the user directory
-	callResult = StringCchCatA(wtFinalPath, wcslen(userDir) + WT_APPDATA_PATH_LENGTH + 1, WT_APPDATA_PATH);
-	switch (callResult)
+	callResult = wcscat_s(wtFinalPath, WT_FINAL_PATH_BUFFER_LENGTH, WT_APPDATA_PATH);
+	if (callResult != S_OK)
 	{
-	case S_OK:
-#ifdef _DEBUG
-		fprintf(debugFile, "WT_PATH_PART2 was concatened successfully\n");
-#endif
-		break;
-
-	case STRSAFE_E_INVALID_PARAMETER:
-		callResult = MessageBox(NULL, "StringCchCatA received an invalid parameter", "Error", MB_OK);
+		callResult = MessageBox(NULL, L"Could not concatenate the WT_APPDATA_PATH to userDir", L"Error", MB_OK);
 		return 0;
-		break;
-
-	case STRSAFE_E_INSUFFICIENT_BUFFER:
-		callResult = MessageBox(NULL, "The memory location that should contain the string after using StringCchCatA is not large enough", "Error", MB_OK);
-		return 0;
-		break;
-
-	default:
-		callResult = MessageBox(NULL, "Something went wrong with StringCchCatA function", "Error", MB_OK);
-		return 0;
-		break;
 	}
 
 	//Clearing the memory used by userDir, as it specifies in the documentation
@@ -98,12 +86,15 @@ int _tmain(int argc, TCHAR* argv[])
 	callResult = RegisterHotKey(NULL, THREAD_HOTKEY_ID, MOD_CONTROL | MOD_ALT | MOD_NOREPEAT, 0x54);  //0x54 is 'T'
 	if (!callResult)
 	{
-		callResult = MessageBox(NULL, "Hotkey could not be registered", "Error", MB_OK);
+		callResult = MessageBox(NULL, L"Hotkey could not be registered", L"Error", MB_OK);
 		return 0;
 	}
 
-
+#ifdef _DEBUG
 	fprintf(debugFile, "\n");
+#endif
+
+
 	BOOL shouldContinue = TRUE;
 	MSG msg = { 0 };
 	while (GetMessage(&msg, NULL, 0, 0) != 0 && shouldContinue)
@@ -112,7 +103,9 @@ int _tmain(int argc, TCHAR* argv[])
 		{
 		case WM_HOTKEY:
 		{
+#ifdef _DEBUG
 			fprintf(debugFile, "WM_HOTKEY received\n");
+#endif
 
 			HWND wtWindowHandle = FindMainWindowAUMID(WT_AUMID);
 			switch ((DWORD)wtWindowHandle)
