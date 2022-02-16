@@ -55,6 +55,16 @@
 			<ComponentGroupRef Id="AppShortcutComponents"/>
 
 		</Feature>
+
+		
+		
+		<!-- We trigger the LaunchAppAfterInstallation custom action when the installation is finished.
+			 !! Not when we click finish, but when all the files are copied.
+			 As our app is a background app, we will not know that our app was launched
+			 Basically, we launch our background app after it is copied to its directory -->
+		<InstallExecuteSequence>
+			<Custom Action="LaunchAppAfterInstallation" After="InstallFinalize"/>
+		</InstallExecuteSequence>
 		
 	</Product>
 	

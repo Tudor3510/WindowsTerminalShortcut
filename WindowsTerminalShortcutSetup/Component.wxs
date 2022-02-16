@@ -60,7 +60,20 @@
 			</Component>
 
 		</ComponentGroup>
-	
+
+
+
+		<!-- The custom action that will be used to launch the app
+			 It will immediately launch the WindowsTerminalShortcutExecutable when this custom action is triggered
+			 It will not wait for action to finish(for process to return) -->
+		<CustomAction
+			Id="LaunchAppAfterInstallation"
+			Execute="immediate"
+			FileKey="WindowsTerminalShortcutExecutable"
+			ExeCommand=""
+			Return="asyncNoWait"
+		/>
+		
 	</Fragment>
 	
 	
