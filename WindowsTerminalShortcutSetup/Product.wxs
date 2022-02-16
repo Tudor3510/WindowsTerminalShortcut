@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-	<Product		Id="{14470395-b42d-4ede-af68-4f8f9115a081}"
+	<Product		Id="{14470395-B42D-4EDE-AF68-4F8F9115A081}"
 					Name="!(loc.ProductName)"
 					Language="1033"
 					Version="0.0.1.0"
 					Manufacturer="!(loc.Company)"
-					UpgradeCode="{da440121-9fac-48e3-8ce3-c835b2938b2d}">
+					UpgradeCode="{DA440121-9FAC-48E3-8CE3-C835B2938B2D}">
 
 		<!-- Language 1033 is English-->
 		<!-- The upgrade code should remain the same between the upgrades-->

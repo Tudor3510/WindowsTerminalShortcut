@@ -11,7 +11,7 @@
 			<!-- </Component> -->
 			
 			<!-- The component for the executable -->
-			<Component Id="WindowsTerminalShortcut" Guid="{c03ad8e9-9dc5-45fe-b03c-efc2066fa4b8}">
+			<Component Id="WindowsTerminalShortcut" Guid="{C03AD8E9-9DC5-45FE-B03C-EFC2066FA4B8}">
 				<File Id="WindowsTerminalShortcutExecutable" Name="Windows Terminal Shortcut.exe" Source="$(var.WindowsTerminalShortcut.TargetDir)Windows Terminal Shortcut.exe"/>
 				
 				<RegistryValue Id="ApplicationKey" Root="HKCU" Key="Software\!(loc.ProductName)" Name="Application" Value="1" Type="integer" KeyPath="yes" />
