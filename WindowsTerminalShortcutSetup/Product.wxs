@@ -12,7 +12,7 @@
 
 
 		<!-- Some installer features and settings. Also some product description -->
-		<Package	InstallerVersion="200"
+		<Package	InstallerVersion="500"
 					Compressed="yes"
 					InstallScope="perUser"
 					Platform="$(var.Platform)"
