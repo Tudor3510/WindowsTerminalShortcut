@@ -19,7 +19,7 @@
 					Manufacturer="!(loc.Company)"
 					Description="!(loc.Description)"/>
 
-		<!-- The downgrade message(when you try to install an older version over a newer one -->
+		<!-- The downgrade message(when you try to install an older version over a newer one) -->
 		<MajorUpgrade DowngradeErrorMessage="A newer version of !(loc.ProductName) is already installed." />
 
 		<!-- Embed the Windows Cabinet archive -->
